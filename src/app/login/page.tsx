@@ -8,20 +8,21 @@ const FEATURES = [
   { icon: TrendingUp, text: "Real-time TikTok analytics" },
   { icon: Users,     text: "Competitor tracking & insights" },
   { icon: Play,      text: "Top 5 viral videos per account" },
-  { icon: Gem,       text: "Pro plan coming soon" },
+  { icon: Gem,       text: "Powered by Whop membership" },
 ]
 
 const ERROR_MESSAGES: Record<string, string> = {
-  no_membership:        "You don't have an active Stats Hub membership on Whop.",
+  no_membership:         "You don't have an active Stats Hub membership on Whop.",
   token_exchange_failed: "Authentication failed. Please try again.",
-  state_mismatch:       "Security check failed. Please try again.",
-  session_expired:      "Session expired. Please try again.",
-  access_denied:        "Access denied. You cancelled the login.",
-  missing_params:       "Invalid callback. Please try again.",
-  userinfo_failed:      "Could not retrieve your Whop profile. Please try again.",
+  state_mismatch:        "Security check failed. Please try again.",
+  session_expired:       "Session expired. Please try again.",
+  access_denied:         "Access denied. You cancelled the login.",
+  missing_params:        "Invalid callback. Please try again.",
+  userinfo_failed:       "Could not retrieve your Whop profile. Please try again.",
 }
 
-export default function LoginPage() {
+// Inner component that uses useSearchParams — wrapped in Suspense below
+function LoginInner() {
   const params = useSearchParams()
   const errorKey = params.get("error")
   const buyUrl   = params.get("buy")
@@ -108,7 +109,7 @@ export default function LoginPage() {
               <Loader2 className="size-5 animate-spin" />
             ) : (
               <>
-                {/* Whop logo placeholder icon */}
+                {/* Whop logo icon */}
                 <svg width="20" height="20" viewBox="0 0 40 40" fill="none" aria-hidden>
                   <rect width="40" height="40" rx="12" fill="white" fillOpacity="0.15" />
                   <path d="M10 28L20 12L30 28H23L20 23L17 28H10Z" fill="white" />
@@ -129,5 +130,18 @@ export default function LoginPage() {
         </p>
       </div>
     </div>
+  )
+}
+
+// Suspense boundary required by Next.js for useSearchParams()
+export default function LoginPage() {
+  return (
+    <React.Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center" style={{ background: "oklch(0.07 0.018 260)" }}>
+        <Loader2 className="size-6 animate-spin text-violet-400" />
+      </div>
+    }>
+      <LoginInner />
+    </React.Suspense>
   )
 }
