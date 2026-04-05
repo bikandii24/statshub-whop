@@ -2,24 +2,27 @@
 
 import * as React from "react"
 import ReactDOM from "react-dom"
-import { useRouter, usePathname } from "next/navigation"
+import { usePathname } from "next/navigation"
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/app-sidebar"
 import { WorkspaceProvider, useWorkspace } from "@/context/workspace-context"
 import { BarChart3, Loader2, Bell, BellRing, CheckCircle2, AlertCircle } from "lucide-react"
 
-// Inner guard — needs to be inside WorkspaceProvider to access context
+// Inner guard — auto-creates a session for any visitor (no login needed in Whop version)
 function AuthGuard({ children }: { children: React.ReactNode }) {
   const { user, isAuthLoading } = useWorkspace()
-  const router = useRouter()
+  const [autoLogging, setAutoLogging] = React.useState(false)
 
   React.useEffect(() => {
-    if (!isAuthLoading && !user) {
-      router.replace("/login")
+    if (!isAuthLoading && !user && !autoLogging) {
+      setAutoLogging(true)
+      fetch("/api/auth", { method: "GET" })
+        .then(() => window.location.reload())
+        .catch(() => setAutoLogging(false))
     }
-  }, [user, isAuthLoading, router])
+  }, [user, isAuthLoading, autoLogging])
 
-  if (isAuthLoading) {
+  if (isAuthLoading || autoLogging) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4" style={{ background: "oklch(0.07 0.018 260)" }}>
         <div className="size-14 rounded-2xl bg-gradient-to-br from-violet-600 to-purple-600 flex items-center justify-center shadow-2xl shadow-violet-500/30">
@@ -30,7 +33,6 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
     )
   }
 
-  if (!user) return null
   return <>{children}</>
 }
 
