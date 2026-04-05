@@ -16,6 +16,10 @@ export interface UserSession {
   id: string
   email: string
   name: string
+  // Whop-specific (only in cm-dashboard-whop)
+  avatar?: string
+  whopId?: string
+  authProvider?: "whop" | "local"
 }
 
 export async function createUser(email: string, name: string, password: string): Promise<{ success: boolean; error?: string; user?: UserSession }> {

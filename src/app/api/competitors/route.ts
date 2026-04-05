@@ -54,7 +54,6 @@ export async function GET(req: NextRequest) {
     ? manual.filter((c: any) => c.workspaceId === workspaceId)
     : manual
 
-  // If no keyword and no API key, return manual only
   const key = process.env.RAPIDAPI_KEY
   const host = process.env.RAPIDAPI_HOST ?? "tiktok-scraper7.p.rapidapi.com"
 
@@ -66,48 +65,56 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       competitors: workspaceManual,
       keyword,
-      warning: "API no configurada. Mostrando solo competidores manuales."
+      warning: "API no configurada. Mostrando solo competidores manuales.",
     })
   }
 
-  try {
-    // ── Strategy 1: user/search ─────────────────────────────────────────
-    const searchUrl = `https://${host}/user/search?keyword=${encodeURIComponent(keyword)}&count=15&cursor=0`
-    const searchRes = await fetch(searchUrl, {
-      headers: { "x-rapidapi-key": key!, "x-rapidapi-host": host },
-      cache: "no-store",
-      signal: AbortSignal.timeout(8000),
-    })
+  // Helper: merge user_info + stats (tiktok-scraper7 user/search format)
+  function normaliseItem(item: any): any {
+    const info  = item?.user_info ?? item
+    const stats = item?.stats ?? {}
+    return {
+      ...info,
+      // Overlay stats fields so mapUser can find them
+      follower_count: info.follower_count ?? stats.follower_count ?? info.followerCount ?? stats.followerCount ?? 0,
+      total_favorited: info.total_favorited ?? stats.digg_count ?? info.heart ?? stats.heartCount ?? 0,
+      aweme_count: info.aweme_count ?? stats.aweme_count ?? info.videoCount ?? stats.videoCount ?? 0,
+    }
+  }
 
+  try {
     let rawList: any[] = []
 
+    // ── Strategy 1: /user/search ──────────────────────────────────────
+    const searchRes = await fetch(
+      `https://${host}/user/search?keyword=${encodeURIComponent(keyword)}&count=20&cursor=0`,
+      { headers: { "x-rapidapi-key": key, "x-rapidapi-host": host }, cache: "no-store", signal: AbortSignal.timeout(8000) }
+    )
     if (searchRes.ok) {
       const json = await searchRes.json()
-      rawList =
+      const list: any[] =
         json?.data?.user_list ??
+        json?.data?.userList ??
         json?.data?.users ??
         json?.user_list ??
+        json?.userList ??
         json?.users ??
         json?.data?.items ??
-        json?.items ??
-        []
+        json?.items ?? []
+      rawList = list.map(normaliseItem)
     }
 
-    // ── Strategy 2: hashtag/feed (extract unique creators from posts) ───
-    if (!rawList.length) {
-      const hashtagUrl = `https://${host}/hashtag/feed?name=${encodeURIComponent(keyword)}&count=30&cursor=0`
-      const hashtagRes = await fetch(hashtagUrl, {
-        headers: { "x-rapidapi-key": key!, "x-rapidapi-host": host },
-        cache: "no-store",
-        signal: AbortSignal.timeout(8000),
-      })
-
+    // ── Strategy 2: /hashtag/feed → extract unique creators ──────────
+    if (rawList.length < 5) {
+      const hashtagRes = await fetch(
+        `https://${host}/hashtag/feed?name=${encodeURIComponent(keyword)}&count=30&cursor=0`,
+        { headers: { "x-rapidapi-key": key, "x-rapidapi-host": host }, cache: "no-store", signal: AbortSignal.timeout(8000) }
+      )
       if (hashtagRes.ok) {
         const hjson = await hashtagRes.json()
         const videos: any[] =
           hjson?.data?.videos ?? hjson?.videos ??
           hjson?.data?.items ?? hjson?.items ?? []
-
         const seenUids = new Set<string>()
         for (const v of videos) {
           const author = v?.author ?? v?.authorMeta ?? null
@@ -115,7 +122,6 @@ export async function GET(req: NextRequest) {
           const uid = String(author.uid ?? author.id ?? author.unique_id ?? "")
           if (!uid || seenUids.has(uid)) continue
           seenUids.add(uid)
-          // Normalise to mapUser-compatible shape
           rawList.push({
             uid,
             unique_id: author.uniqueId ?? author.unique_id ?? author.id,
@@ -131,20 +137,17 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // ── Strategy 3: video/search (extract unique creators from videos) ──
-    if (!rawList.length) {
-      const videoUrl = `https://${host}/video/search?keyword=${encodeURIComponent(keyword)}&count=20&cursor=0`
-      const videoRes = await fetch(videoUrl, {
-        headers: { "x-rapidapi-key": key!, "x-rapidapi-host": host },
-        cache: "no-store",
-        signal: AbortSignal.timeout(8000),
-      })
+    // ── Strategy 3: /video/search → extract unique creators ──────────
+    if (rawList.length < 5) {
+      const videoRes = await fetch(
+        `https://${host}/video/search?keyword=${encodeURIComponent(keyword)}&count=20&cursor=0`,
+        { headers: { "x-rapidapi-key": key, "x-rapidapi-host": host }, cache: "no-store", signal: AbortSignal.timeout(8000) }
+      )
       if (videoRes.ok) {
         const vjson = await videoRes.json()
         const videos: any[] =
           vjson?.data?.videos ?? vjson?.videos ??
           vjson?.data?.items ?? vjson?.items ?? []
-
         const seenUids = new Set<string>()
         for (const v of videos) {
           const author = v?.author ?? v?.authorMeta ?? null
@@ -175,11 +178,18 @@ export async function GET(req: NextRequest) {
       })
     }
 
+    // Deduplicate and take top 5 by followers
+    const seenHandles = new Set<string>()
     const found = rawList
-      .map((item: any) => mapUser(item?.user_info ?? item))
-      .filter((c: any) => c.followers > 0)
+      .map((item: any) => mapUser(item))
+      .filter((c: any) => {
+        const h = c.handle.toLowerCase()
+        if (seenHandles.has(h)) return false
+        seenHandles.add(h)
+        return c.handle !== "@unknown"
+      })
       .sort((a: any, b: any) => b.followers - a.followers)
-      .slice(0, 10)
+      .slice(0, 5)
 
     // Merge: manual first, then search results (deduplicated)
     const manualHandles = new Set(workspaceManual.map((c: any) => c.handle.toLowerCase()))
