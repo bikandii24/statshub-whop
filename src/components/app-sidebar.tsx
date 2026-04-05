@@ -3,7 +3,7 @@
 import * as React from "react"
 import {
   BarChart3, TrendingUp, Video, Zap, Settings, ChevronRight, Plus,
-  ChevronsUpDown, LogOut, Folder, LayoutDashboard, Newspaper, Pencil, Check, X,
+  ChevronsUpDown, LogOut, Folder, LayoutDashboard, Newspaper, Pencil, Check, X, Trash2,
 } from "lucide-react"
 
 import {
@@ -42,12 +42,13 @@ const iconMap: Record<string, any> = {
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname()
-  const { user, workspaces, activeWorkspace, setActiveWorkspace, addWorkspace, renameWorkspace, isLoading, logout } = useWorkspace()
+  const { user, workspaces, activeWorkspace, setActiveWorkspace, addWorkspace, renameWorkspace, deleteWorkspace, isLoading, logout } = useWorkspace()
   const [wsOpen, setWsOpen] = React.useState(false)
   const [addingWs, setAddingWs] = React.useState(false)
   const [newWsName, setNewWsName] = React.useState("")
   const [renamingId, setRenamingId] = React.useState<string | null>(null)
   const [renameVal, setRenameVal] = React.useState("")
+  const [confirmDeleteId, setConfirmDeleteId] = React.useState<string | null>(null)
   const wsRef = React.useRef<HTMLDivElement>(null)
 
   // Close dropdown on outside click
@@ -183,7 +184,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                         )}
                         {isActive && !isRenaming && <div className="size-1.5 rounded-full bg-violet-400 shrink-0" />}
                       </button>
-                      {/* Rename button */}
+                      {/* Action buttons */}
                       {isRenaming ? (
                         <div className="flex gap-1 shrink-0">
                           <button onClick={confirmRename} className="size-5 flex items-center justify-center rounded text-emerald-400 hover:bg-emerald-500/10">
@@ -194,12 +195,35 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                           </button>
                         </div>
                       ) : (
-                        <button
-                          onClick={e => { e.stopPropagation(); startRename(ws) }}
-                          className="size-5 flex items-center justify-center rounded text-muted-foreground/30 hover:text-white/60 hover:bg-white/10 opacity-0 group-hover:opacity-100 transition-all shrink-0"
-                        >
-                          <Pencil className="size-3" />
-                        </button>
+                        <div className="flex gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-all">
+                          {/* Rename */}
+                          <button
+                            onClick={e => { e.stopPropagation(); setConfirmDeleteId(null); startRename(ws) }}
+                            className="size-5 flex items-center justify-center rounded text-muted-foreground/30 hover:text-white/60 hover:bg-white/10 transition-all"
+                          >
+                            <Pencil className="size-3" />
+                          </button>
+                          {/* Delete — only if >1 workspace, requires confirm */}
+                          {workspaces.length > 1 && (
+                            confirmDeleteId === ws.id ? (
+                              <button
+                                onClick={async e => { e.stopPropagation(); await deleteWorkspace(ws.id); setConfirmDeleteId(null) }}
+                                title="Confirmar borrado"
+                                className="size-5 flex items-center justify-center rounded bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-all"
+                              >
+                                <Check className="size-3" />
+                              </button>
+                            ) : (
+                              <button
+                                onClick={e => { e.stopPropagation(); setConfirmDeleteId(ws.id) }}
+                                title="Borrar espacio"
+                                className="size-5 flex items-center justify-center rounded text-muted-foreground/30 hover:text-red-400 hover:bg-red-500/10 transition-all"
+                              >
+                                <Trash2 className="size-3" />
+                              </button>
+                            )
+                          )}
+                        </div>
                       )}
                     </div>
                   )

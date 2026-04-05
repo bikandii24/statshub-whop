@@ -70,6 +70,7 @@ interface WorkspaceContextType {
   syncAccount: (id: string) => Promise<{ success: boolean; error?: string }>
   addWorkspace: (name: string, icon?: string, color?: string) => Promise<void>
   renameWorkspace: (id: string, name: string) => Promise<void>
+  deleteWorkspace: (id: string) => Promise<void>
   deleteAccount: (id: string) => Promise<void>
   markNotificationRead: (id: string) => void
   isLoading: boolean
@@ -197,6 +198,23 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     setWorkspaces(updated)
     setActiveWorkspace(prev => prev ? (updated.find(w => w.id === prev.id) ?? prev) : null)
   }
+  const deleteWorkspace = async (id: string) => {
+    if (workspaces.length <= 1) return // never delete the last one
+    const res = await fetch("/api/accounts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "delete-workspace", payload: { id } })
+    })
+    const data = await res.json()
+    const updated: Workspace[] = data.workspaces ?? []
+    const updatedAccounts = data.accounts ?? []
+    setWorkspaces(updated)
+    setAccounts(updatedAccounts)
+    setActiveWorkspace(prev => {
+      if (prev?.id === id) return updated[0] ?? null
+      return prev
+    })
+  }
 
   const markNotificationRead = (id: string) => {
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n))
@@ -216,7 +234,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     <WorkspaceContext.Provider value={{
       user, isAuthLoading, logout,
       workspaces, accounts, snapshots, notifications, activeWorkspace, setActiveWorkspace,
-      addAccount, syncAccount, addWorkspace, renameWorkspace, deleteAccount, markNotificationRead,
+      addAccount, syncAccount, addWorkspace, renameWorkspace, deleteWorkspace, deleteAccount, markNotificationRead,
       isLoading, apiConfigured
     }}>
       {children}
