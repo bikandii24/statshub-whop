@@ -4,11 +4,24 @@ import { verifyToken } from '@/lib/auth'
 import { readDB, writeDB, readSettings } from '@/lib/storage'
 import { checkRateLimit } from '@/lib/rate-limit'
 
-// ── Auth from cookie ──────────────────────────────────────────────────────
+// ── Auth from cookie (Whop version: accepts whop_bid as fallback) ─────────
 function getUserFromRequest(req: NextRequest) {
+  // Try JWT token first
   const token = req.cookies.get('sh_token')?.value
-  if (!token) return null
-  return verifyToken(token)
+  if (token) {
+    const user = verifyToken(token)
+    if (user) return user
+  }
+  // Fallback: use whop_bid cookie (set by auto-session in /api/auth)
+  const browserId = req.cookies.get('whop_bid')?.value
+  if (browserId) {
+    return {
+      id: `whop-${browserId}`,
+      email: `user-${browserId.slice(0, 6)}@statshub.whop`,
+      name: 'Whop Member',
+    }
+  }
+  return null
 }
 
 function getDefaultWorkspaces() {

@@ -39,7 +39,8 @@ function mapUser(u: any) {
 // ── GET: search or return manual competitors ──────────────────────────────
 export async function GET(req: NextRequest) {
   const token = req.cookies.get("sh_token")?.value
-  const user = token ? verifyToken(token) : null
+  const bid = req.cookies.get("whop_bid")?.value
+  const user = token ? verifyToken(token) : bid ? { id: `whop-${bid}`, email: `user-${bid.slice(0,6)}@statshub.whop`, name: 'Whop Member' } : null
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
   const { searchParams } = new URL(req.url)
@@ -212,8 +213,9 @@ export async function GET(req: NextRequest) {
 
 // ── POST: add / delete manual competitor ─────────────────────────────────
 export async function POST(req: NextRequest) {
-  const token = req.cookies.get("sh_token")?.value
-  const user = token ? verifyToken(token) : null
+  const token2 = req.cookies.get("sh_token")?.value
+  const bid2 = req.cookies.get("whop_bid")?.value
+  const user = token2 ? verifyToken(token2) : bid2 ? { id: `whop-${bid2}`, email: `user-${bid2.slice(0,6)}@statshub.whop`, name: 'Whop Member' } : null
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
   const { action, payload } = await req.json()
