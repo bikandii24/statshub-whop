@@ -7,6 +7,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/app-sidebar"
 import { WorkspaceProvider, useWorkspace } from "@/context/workspace-context"
 import { BarChart3, Loader2, Bell, BellRing, CheckCircle2, AlertCircle } from "lucide-react"
+import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 
 // Inner guard — Whop controls access, so we just wait for session init then show dashboard
 function AuthGuard({ children }: { children: React.ReactNode }) {
@@ -159,11 +160,12 @@ export function AppLayoutClient({ children }: { children: React.ReactNode }) {
             <AppSidebar />
             <main className="flex-1 overflow-y-auto overflow-x-hidden relative">
               <TopBar />
-              <div className="p-3 sm:p-5 md:p-8">
+              <div className="p-3 sm:p-5 md:p-8 pb-24 sm:pb-8">
                 {children}
               </div>
             </main>
           </div>
+          <MobileBottomNav />
         </SidebarProvider>
       </AuthGuard>
     </WorkspaceProvider>

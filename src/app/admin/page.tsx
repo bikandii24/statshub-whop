@@ -21,13 +21,18 @@ const fmt = (n: number) =>
   : String(n)
 
 function downloadCSV(data: any[]) {
-  const headers = ["handle", "platform", "followers", "posts", "views", "engagement", "verified", "addedBy", "lastSync"]
-  const rows = data.map(a => headers.map(h => JSON.stringify(a[h] ?? "")).join(","))
+  // Export anonymized data only — no emails, no personal identifiers
+  const headers = ["handle", "platform", "followers", "posts", "views", "engagement", "verified", "lastSync"]
+  const rows = data.map(a => headers.map(h => {
+    const v = a[h]
+    if (v === null || v === undefined) return '""'
+    return JSON.stringify(String(v))
+  }).join(","))
   const csv  = [headers.join(","), ...rows].join("\n")
   const blob = new Blob([csv], { type: "text/csv" })
   const url  = URL.createObjectURL(blob)
   const link = document.createElement("a")
-  link.href = url; link.download = `statshub-accounts-${Date.now()}.csv`
+  link.href = url; link.download = `statshub-market-data-${Date.now()}.csv`
   link.click(); URL.revokeObjectURL(url)
 }
 

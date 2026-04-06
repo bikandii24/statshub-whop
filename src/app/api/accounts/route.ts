@@ -3,7 +3,8 @@ import { fetchTikTokStats } from '@/lib/tiktok'
 import { fetchInstagramStats, fetchTwitterStats, fetchYouTubeStats, fetchFacebookStats } from '@/lib/social-apis'
 import { verifyToken } from '@/lib/auth'
 import { readDB, writeDB, readSettings } from '@/lib/storage'
-import { checkRateLimit } from '@/lib/rate-limit'
+import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
+import { sanitizeHandle, isValidHandle, isValidPlatform, looksLikeAttack, sanitizeString } from '@/lib/sanitize'
 
 // ── Auth from cookie (Whop version: accepts whop_bid as fallback) ─────────
 function getUserFromRequest(req: NextRequest) {
@@ -85,7 +86,22 @@ export async function POST(req: NextRequest) {
     const { db, workspaces, accounts } = await getUserData(user.id)
 
     if (action === 'add-account') {
-      const platform = payload.platform ?? 'tiktok'
+      const rawHandle   = String(payload.handle ?? '')
+      const rawPlatform = String(payload.platform ?? 'tiktok')
+
+      // ── Security guards ────────────────────────────────────────────────
+      if (looksLikeAttack(rawHandle) || looksLikeAttack(rawPlatform)) {
+        return NextResponse.json({ error: 'Invalid input.' }, { status: 400 })
+      }
+      if (!isValidPlatform(rawPlatform)) {
+        return NextResponse.json({ error: 'Invalid platform.' }, { status: 400 })
+      }
+      const handle = sanitizeHandle(rawHandle)
+      if (!handle || !isValidHandle(handle)) {
+        return NextResponse.json({ error: 'Invalid handle format.' }, { status: 400 })
+      }
+
+      const platform = rawPlatform
 
       // Always re-read fresh DB right before write to avoid stale data race
       const freshDB = await readDB()
@@ -93,12 +109,12 @@ export async function POST(req: NextRequest) {
       const freshAccounts = freshDB.accounts[user.id]
 
       // Deduplication: reject duplicate handles per platform
-      const normalizedHandle = payload.handle.toLowerCase().replace(/^@/, '')
+      const normalizedHandle = handle.toLowerCase().replace(/^@/, '')
       const duplicate = freshAccounts.find((a: any) =>
         a.handle.toLowerCase().replace(/^@/, '') === normalizedHandle &&
         (a.platform ?? 'tiktok') === platform
       )
-      if (duplicate) return NextResponse.json({ error: `Account ${payload.handle} is already linked (${platform}).` }, { status: 409 })
+      if (duplicate) return NextResponse.json({ error: `Account ${handle} is already linked (${platform}).` }, { status: 409 })
 
       // Max accounts limit per workspace
       const wsAccounts = freshAccounts.filter((a: any) => a.workspaceId === payload.workspaceId)
