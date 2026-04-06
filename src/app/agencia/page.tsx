@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 
 import { useT } from "@/i18n"
@@ -21,6 +21,7 @@ type Client = {
 }
 
 export default function AgenciaPage() {
+  const t = useT()
   const [agencyName] = React.useState("My Agency")
   const [agencyLocation] = React.useState("New York, USA")
   const [clients, setClients] = React.useState<Client[]>([])
@@ -121,7 +122,7 @@ export default function AgenciaPage() {
               <div className="flex gap-3">
                 <Button onClick={handleBulkImport} disabled={bulkLoading || !bulkText.trim()} className="bg-indigo-600 hover:bg-indigo-500 font-black rounded-xl flex gap-2">
                   {bulkLoading ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}
-                  {bulkLoading ? "Importing..." : "Import"}
+                  {bulkLoading ? t.agency_importing : t.agency_import}
                 </Button>
                 <Button variant="ghost" onClick={() => { setBulkOpen(false); setBulkResults([]) }} className="text-muted-foreground/60 rounded-xl">Cancel</Button>
               </div>
@@ -153,8 +154,8 @@ export default function AgenciaPage() {
         <div className="space-y-4">
           <div className="grid grid-cols-3 gap-4 print-hidden">
             {[
-              { l: "Clients",        v: clients.length,       i: Users,     c: "text-indigo-400",  bg: "bg-indigo-500/10" },
-              { l: "Total Audience", v: fmt(totalFollowers),  i: Users,     c: "text-emerald-400", bg: "bg-emerald-500/10" },
+              { l: t.agency_clients,        v: clients.length,       i: Users,     c: "text-indigo-400",  bg: "bg-indigo-500/10" },
+              { l: t.agency_audience, v: fmt(totalFollowers),  i: Users,     c: "text-emerald-400", bg: "bg-emerald-500/10" },
               { l: "Est. Views",     v: fmt(totalViews),      i: LineChart, c: "text-pink-400",    bg: "bg-pink-500/10" },
             ].map((s, i) => (
               <Card key={i} className="glass border-white/[0.07]">
@@ -221,7 +222,7 @@ export default function AgenciaPage() {
           </div>
         </div>
         <div className="grid grid-cols-3 gap-4 mb-8">
-          {[["Clients", clients.length], ["Audience", fmt(totalFollowers)], ["Likes", fmt(totalLikes)]].map(([l, v], i) => (
+          {[[t.agency_clients, clients.length], ["Audience", fmt(totalFollowers)], ["Likes", fmt(totalLikes)]].map(([l, v], i) => (
             <div key={i} className="p-4 border border-white/10 rounded-xl text-center">
               <div className="text-2xl font-black text-white">{v}</div>
               <div className="text-[9px] uppercase font-bold text-muted-foreground/50">{l}</div>

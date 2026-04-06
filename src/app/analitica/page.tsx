@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 
 import { useT } from "@/i18n"
@@ -36,9 +36,9 @@ const METRIC_COLORS: Record<MetricKey, { stroke: string; gradId: string }> = {
   vistas:     { stroke: "oklch(0.70 0.18 340)", gradId: "gradVistas" },
 }
 const METRIC_LABELS: Record<MetricKey, string> = {
-  audiencia: "Total Audience", engagement: "Engagement Rate",
-  alcance: "Estimated Reach", viralidad: "Virality Score",
-  vistas: "Total Views",
+  audiencia: t.analytics_kpi_audience, engagement: t.analytics_kpi_engagement,
+  alcance: t.analytics_kpi_reach, viralidad: "Virality Score",
+  vistas: t.analytics_kpi_views,
 }
 const GOAL_TYPES = [
   { value: "followers", label: "Followers" },
@@ -150,6 +150,7 @@ const HORAS_BASE = [
 
 // ── Page ─────────────────────────────────────────────────────────────────
 export default function AnaliticaPage() {
+  const t = useT()
   const { activeWorkspace, accounts, snapshots, isLoading } = useWorkspace()
   const [activeTab, setActiveTab] = React.useState<TabId>("metricas")
   const [dateFilter, setDateFilter] = React.useState<"7d"|"30d"|"90d">("7d")
@@ -195,10 +196,10 @@ export default function AnaliticaPage() {
   const fmtN = (n: number) => n >= 1_000_000 ? `${(n / 1_000_000).toFixed(1)}M` : n >= 1_000 ? `${(n / 1_000).toFixed(1)}K` : n.toString()
 
   const kpiList = [
-    { title: "Total Audience",    value: fmtN(totalFollowers),    change: "Real followers",          up: null, icon: Users,      color: "text-emerald-400", bg: "bg-emerald-500/10", metricKey: "audiencia"  as MetricKey },
-    { title: "Total Views",       value: fmtN(totalViews),        change: "Real views · last 35 vids", up: null, icon: Zap,        color: "text-pink-400",    bg: "bg-pink-500/10",    metricKey: "vistas"     as MetricKey },
-    { title: "Engagement Rate",   value: `${avgEngNum.toFixed(1)}%`, change: "Accounts average",     up: null, icon: TrendingUp, color: "text-violet-400",  bg: "bg-violet-500/10",  metricKey: "engagement" as MetricKey },
-    { title: "Estimated Reach",   value: fmtN(estimatedReach),    change: "Reach × engagement",     up: null, icon: Eye,        color: "text-blue-400",   bg: "bg-blue-500/10",   metricKey: "alcance"    as MetricKey },
+    { title: t.analytics_kpi_audience,    value: fmtN(totalFollowers),    change: "Real followers",          up: null, icon: Users,      color: "text-emerald-400", bg: "bg-emerald-500/10", metricKey: "audiencia"  as MetricKey },
+    { title: t.analytics_kpi_views,       value: fmtN(totalViews),        change: "Real views · last 35 vids", up: null, icon: Zap,        color: "text-pink-400",    bg: "bg-pink-500/10",    metricKey: "vistas"     as MetricKey },
+    { title: t.analytics_kpi_engagement,   value: `${avgEngNum.toFixed(1)}%`, change: "Accounts average",     up: null, icon: TrendingUp, color: "text-violet-400",  bg: "bg-violet-500/10",  metricKey: "engagement" as MetricKey },
+    { title: t.analytics_kpi_reach,   value: fmtN(estimatedReach),    change: "Reach × engagement",     up: null, icon: Eye,        color: "text-blue-400",   bg: "bg-blue-500/10",   metricKey: "alcance"    as MetricKey },
   ]
 
   // Real chart data from snapshots
@@ -321,11 +322,11 @@ export default function AnaliticaPage() {
   }
 
   const TABS: { id: TabId; label: string; icon: any }[] = [
-    { id: "metricas",    label: "Metrics",       icon: BarChart3 },
-    { id: "comparar",   label: "Compare",        icon: GitCompare },
-    { id: "mejor-hora", label: "Best Time",      icon: Clock },
-    { id: "objetivos",  label: "Goals",          icon: Target },
-    { id: "roi",        label: "Monetization",   icon: Zap },
+    { id: "metricas",    label: t.analytics_tab_metrics,       icon: BarChart3 },
+    { id: "comparar",   label: t.analytics_tab_compare,        icon: GitCompare },
+    { id: "mejor-hora", label: t.analytics_tab_best_time,      icon: Clock },
+    { id: "objetivos",  label: t.analytics_tab_goals,          icon: Target },
+    { id: "roi",        label: t.analytics_tab_roi,   icon: Zap },
   ]
 
   const accA = wsAccounts.find(a => a.id === cmpA)
@@ -355,9 +356,9 @@ export default function AnaliticaPage() {
         <div className="flex flex-col sm:flex-row items-center gap-3">
           <div className="flex items-center bg-white/5 border border-white/10 p-1 rounded-xl">
             {[
-              { id: "7d", label: "7 Days" },
-              { id: "30d", label: "30 Days" },
-              { id: "90d", label: "90 Days" }
+              { id: "7d", label: t.analytics_7d },
+              { id: "30d", label: t.analytics_30d },
+              { id: "90d", label: t.analytics_90d }
             ].map(f => (
               <button
                 key={f.id}
@@ -560,9 +561,9 @@ export default function AnaliticaPage() {
         <div className="space-y-6">
           <div className="grid gap-4 md:grid-cols-3">
             {[
-              { label: "Best time", value: bestHour.hora, sub: "Highest expected engagement", color: "text-emerald-400", bg: "bg-emerald-500/10" },
-              { label: "Evening peak", value: "20h – 22h", sub: "Optimal TikTok window", color: "text-violet-400", bg: "bg-violet-500/10" },
-              { label: "Avoid", value: "02h – 05h", sub: "Minimum audience activity", color: "text-red-400", bg: "bg-red-500/10" },
+              { label: t.analytics_tab_best_time, value: bestHour.hora, sub: "Highest expected engagement", color: "text-emerald-400", bg: "bg-emerald-500/10" },
+              { label: t.analytics_peak, value: "20h – 22h", sub: "Optimal TikTok window", color: "text-violet-400", bg: "bg-violet-500/10" },
+              { label: t.analytics_avoid, value: "02h – 05h", sub: "Minimum audience activity", color: "text-red-400", bg: "bg-red-500/10" },
             ].map(s => (
               <Card key={s.label} className="glass border-white/[0.07]">
                 <CardContent className="p-5">
@@ -627,7 +628,7 @@ export default function AnaliticaPage() {
             <CardHeader className="pb-3">
               <div className="flex items-center gap-3">
                 <div className="size-9 rounded-xl bg-violet-500/10 text-violet-400 flex items-center justify-center"><Target className="size-4" /></div>
-                <CardTitle className="text-base font-bold" style={{ fontFamily: "var(--font-syne)" }}>New Goal</CardTitle>
+                <CardTitle className="text-base font-bold" style={{ fontFamily: "var(--font-syne)" }}>{t.analytics_goal_new}</CardTitle>
               </div>
             </CardHeader>
             <CardContent className="space-y-3">

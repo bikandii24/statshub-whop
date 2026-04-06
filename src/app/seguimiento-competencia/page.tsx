@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 
 import { useT } from "@/i18n"
@@ -24,6 +24,7 @@ interface Competitor {
 }
 
 export default function CompetenciaPage() {
+  const t = useT()
   const { activeWorkspace } = useWorkspace()
   const [competitors, setCompetitors] = React.useState<Competitor[]>([])
   const [loading, setLoading] = React.useState(false)
@@ -131,7 +132,7 @@ export default function CompetenciaPage() {
 
       <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div>
-          <div className="section-pill bg-emerald-500/10 text-emerald-400 border-emerald-500/20 mb-3"><TrendingUp className="size-3" /> Live Competition</div>
+          <div className="section-pill bg-emerald-500/10 text-emerald-400 border-emerald-500/20 mb-3"><TrendingUp className="size-3" /> {t.competition_pill}</div>
           <h1 className="text-2xl sm:text-4xl font-black tracking-tighter leading-tight text-white" style={{ fontFamily: "var(--font-syne)" }}>
             Rival <span className="gradient-text-green">Radar</span>
           </h1>
@@ -189,9 +190,9 @@ export default function CompetenciaPage() {
       {competitors.length > 0 && (
         <div className="grid grid-cols-3 gap-4">
           {[
-            { label: "Accounts analyzed", value: competitors.length.toString(), icon: Users,      color: "text-violet-400",  bg: "bg-violet-500/10" },
-            { label: "Largest audience",  value: fmt(topFollowers),             icon: TrendingUp, color: "text-emerald-400", bg: "bg-emerald-500/10" },
-            { label: "Avg. engagement",   value: `${avgEng}%`,                  icon: Flame,      color: "text-orange-400",  bg: "bg-orange-500/10" },
+            { label: t.competition_kpi_accounts, value: competitors.length.toString(), icon: Users,      color: "text-violet-400",  bg: "bg-violet-500/10" },
+            { label: t.competition_kpi_largest,  value: fmt(topFollowers),             icon: TrendingUp, color: "text-emerald-400", bg: "bg-emerald-500/10" },
+            { label: t.competition_kpi_avg_eng,   value: `${avgEng}%`,                  icon: Flame,      color: "text-orange-400",  bg: "bg-orange-500/10" },
           ].map(s => (
             <Card key={s.label} className="glass border-white/[0.07]">
               <CardContent className="p-5">

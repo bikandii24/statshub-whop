@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 
 import { useT } from "@/i18n"
@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 
-const CATEGORIES = ["All", "AI Tools", "Research", "Business", "Fitness"] as const
+const CATEGORIES = [t.news_cat_all, t.news_cat_ai, t.news_cat_research, t.news_cat_business, t.news_cat_fitness] as const
 type Category = typeof CATEGORIES[number]
 
 interface NewsItem {
@@ -27,10 +27,10 @@ interface NewsItem {
 
 function getCategoryIcon(cat: string) {
   switch (cat) {
-    case "AI Tools":   return { Icon: Cpu,       color: "text-blue-400",    bg: "bg-blue-500/10" }
-    case "Research":   return { Icon: Brain,      color: "text-emerald-400", bg: "bg-emerald-500/10" }
-    case "Fitness":    return { Icon: Dumbbell,   color: "text-orange-400",  bg: "bg-orange-500/10" }
-    case "Business":   return { Icon: TrendingUp, color: "text-violet-400",  bg: "bg-violet-500/10" }
+    case t.news_cat_ai:   return { Icon: Cpu,       color: "text-blue-400",    bg: "bg-blue-500/10" }
+    case t.news_cat_research:   return { Icon: Brain,      color: "text-emerald-400", bg: "bg-emerald-500/10" }
+    case t.news_cat_fitness:    return { Icon: Dumbbell,   color: "text-orange-400",  bg: "bg-orange-500/10" }
+    case t.news_cat_business:   return { Icon: TrendingUp, color: "text-violet-400",  bg: "bg-violet-500/10" }
     default:           return { Icon: Globe,      color: "text-muted-foreground/60", bg: "bg-white/5" }
   }
 }
@@ -45,11 +45,12 @@ function timeAgo(ts: number): string {
 }
 
 export default function NoticiasPage() {
+  const t = useT()
   const [news, setNews] = React.useState<NewsItem[]>([])
   const [loading, setLoading] = React.useState(true)
   const [error, setError] = React.useState<string | null>(null)
   const [query, setQuery] = React.useState("")
-  const [activeCategory, setActiveCategory] = React.useState<typeof CATEGORIES[number]>("All")
+  const [activeCategory, setActiveCategory] = React.useState<typeof CATEGORIES[number]>(t.news_cat_all)
   const [saved, setSaved] = React.useState<Set<number>>(new Set())
 
   const fetchNews = async () => {
@@ -70,7 +71,7 @@ export default function NoticiasPage() {
     setSaved(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n })
 
   const filtered = news.filter(n => {
-    const matchCat = activeCategory === "All" || n.category === activeCategory
+    const matchCat = activeCategory === t.news_cat_all || n.category === activeCategory
     const matchQ = !query || n.title.toLowerCase().includes(query.toLowerCase()) || n.description.toLowerCase().includes(query.toLowerCase())
     return matchCat && matchQ
   })
@@ -104,10 +105,10 @@ export default function NoticiasPage() {
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
-          { label: "Articles today",   value: todayCount.toString(),      icon: Newspaper,  color: "text-violet-400",  bg: "bg-violet-500/10" },
-          { label: "Active sources",   value: sourcesSet.size.toString(), icon: Globe,      color: "text-blue-400",   bg: "bg-blue-500/10" },
-          { label: "Total articles",   value: news.length.toString(),     icon: TrendingUp, color: "text-emerald-400", bg: "bg-emerald-500/10" },
-          { label: "Trending",         value: hotCount.toString(),         icon: Flame,      color: "text-orange-400",  bg: "bg-orange-500/10" },
+          { label: t.news_articles_today,   value: todayCount.toString(),      icon: Newspaper,  color: "text-violet-400",  bg: "bg-violet-500/10" },
+          { label: t.news_active_sources,   value: sourcesSet.size.toString(), icon: Globe,      color: "text-blue-400",   bg: "bg-blue-500/10" },
+          { label: t.news_total,   value: news.length.toString(),     icon: TrendingUp, color: "text-emerald-400", bg: "bg-emerald-500/10" },
+          { label: t.news_trending,         value: hotCount.toString(),         icon: Flame,      color: "text-orange-400",  bg: "bg-orange-500/10" },
         ].map(s => (
           <Card key={s.label} className="glass border-white/[0.07]">
             <CardContent className="p-4">
@@ -122,7 +123,7 @@ export default function NoticiasPage() {
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground/40" />
-          <Input placeholder="Search news..." value={query} onChange={e => setQuery(e.target.value)} className="pl-11 h-11 glass border-white/[0.07] rounded-2xl font-medium" />
+          <Input placeholder={t.news_search} value={query} onChange={e => setQuery(e.target.value)} className="pl-11 h-11 glass border-white/[0.07] rounded-2xl font-medium" />
         </div>
         <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
           {CATEGORIES.map(cat => (
@@ -173,7 +174,7 @@ export default function NoticiasPage() {
                     </div>
                   </div>
                   <h3 className="text-sm font-black text-white leading-snug line-clamp-3 flex-1" style={{ fontFamily: "var(--font-syne)" }}>{item.title}</h3>
-                  <p className="text-xs text-muted-foreground/60 line-clamp-2 font-medium">{item.description || "No description available."}</p>
+                  <p className="text-xs text-muted-foreground/60 line-clamp-2 font-medium">{item.description || t.news_no_description}</p>
                   <div className="flex items-center justify-between pt-2 border-t border-white/[0.05]">
                     <div className="flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground/50"><Globe className="size-3" />{item.source}</div>
                     <div className="flex items-center gap-1">

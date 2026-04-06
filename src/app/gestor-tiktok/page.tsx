@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 
 import { useT } from "@/i18n"
@@ -28,6 +28,7 @@ function timeAgo(iso: string) {
 }
 
 export default function GestorTiktokPage() {
+  const t = useT()
   const router = useRouter()
   const { activeWorkspace, accounts, addAccount, syncAccount, deleteAccount, isLoading, apiConfigured } = useWorkspace()
   const [openAccModal, setOpenAccModal] = React.useState(false)
@@ -51,10 +52,10 @@ export default function GestorTiktokPage() {
     ? (workspaceAccounts.reduce((s, a) => s + a.engagement, 0) / workspaceAccounts.length).toFixed(2) : "0"
 
   const topStats = [
-    { label: "Total Audience",   value: fmt(totalFollowers), icon: Users,    color: "text-emerald-400", bg: "bg-emerald-500/10", border: "border-emerald-500/20" },
-    { label: "Total Likes",      value: fmt(totalLikes),     icon: Heart,    color: "text-pink-400",    bg: "bg-pink-500/10",    border: "border-pink-500/20" },
-    { label: "Videos Published", value: fmt(totalPosts),     icon: FileText, color: "text-blue-400",    bg: "bg-blue-500/10",    border: "border-blue-500/20" },
-    { label: "Avg. Engagement",  value: `${avgEngagement}%`, icon: Flame,    color: "text-orange-400",  bg: "bg-orange-500/10",  border: "border-orange-500/20" },
+    { label: t.tiktok_total_audience,   value: fmt(totalFollowers), icon: Users,    color: "text-emerald-400", bg: "bg-emerald-500/10", border: "border-emerald-500/20" },
+    { label: t.tiktok_total_likes,      value: fmt(totalLikes),     icon: Heart,    color: "text-pink-400",    bg: "bg-pink-500/10",    border: "border-pink-500/20" },
+    { label: t.tiktok_videos, value: fmt(totalPosts),     icon: FileText, color: "text-blue-400",    bg: "bg-blue-500/10",    border: "border-blue-500/20" },
+    { label: t.tiktok_avg_engagement,  value: `${avgEngagement}%`, icon: Flame,    color: "text-orange-400",  bg: "bg-orange-500/10",  border: "border-orange-500/20" },
   ]
 
   const handleAddAccount = async () => {
@@ -183,7 +184,7 @@ export default function GestorTiktokPage() {
                 </CardHeader>
                 <CardContent className="px-5 pb-4 space-y-3">
                   <div className="grid grid-cols-3 gap-3">
-                    {[{ label: "Followers", value: fmt(acc.followers) }, { label: "Likes", value: fmt(acc.likes ?? 0) }, { label: "Videos", value: fmt(acc.posts) }].map(s => (
+                    {[{ label: t.tiktok_followers, value: fmt(acc.followers) }, { label: "Likes", value: fmt(acc.likes ?? 0) }, { label: "Videos", value: fmt(acc.posts) }].map(s => (
                       <div key={s.label} className="text-center p-2.5 rounded-xl bg-white/[0.04] border border-white/[0.05]">
                         <div className="text-base sm:text-lg font-black text-white tracking-tighter">{s.value}</div>
                         <div className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest text-muted-foreground/40 mt-0.5">{s.label}</div>
@@ -204,7 +205,7 @@ export default function GestorTiktokPage() {
                         <div className="flex items-center gap-1.5 animate-in fade-in duration-200">
                           <span className="text-[10px] font-bold text-red-400">Delete?</span>
                           <Button variant="ghost" size="sm" onClick={() => setConfirmDeleteId(null)} className="h-6 px-2 rounded-lg text-[10px] font-bold text-muted-foreground/60 hover:text-white hover:bg-white/10">Cancel</Button>
-                          <Button size="sm" onClick={() => handleDelete(acc.id)} disabled={deletingId === acc.id} className="h-6 px-2 rounded-lg text-[10px] font-bold bg-red-600 hover:bg-red-500 text-white">{deletingId === acc.id ? <Loader2 className="size-3 animate-spin" /> : "Delete"}</Button>
+                          <Button size="sm" onClick={() => handleDelete(acc.id)} disabled={deletingId === acc.id} className="h-6 px-2 rounded-lg text-[10px] font-bold bg-red-600 hover:bg-red-500 text-white">{deletingId === acc.id ? <Loader2 className="size-3 animate-spin" /> : t.tiktok_delete}</Button>
                         </div>
                       ) : (
                         <>
@@ -260,7 +261,7 @@ export default function GestorTiktokPage() {
                     <Input placeholder="e.g. Entrepreneurship, Storytelling..." value={aiNiche} onChange={e => setAiNiche(e.target.value)} className="glass border-white/10 rounded-xl bg-transparent" />
                   </div>
                   <Button onClick={handleGenerateIdeas} disabled={!aiSelectedAccount || aiLoading} className="w-full h-11 rounded-xl bg-white text-black hover:bg-white/90 font-black text-sm flex gap-2 transition-all">
-                    {aiLoading ? <Loader2 className="size-4 animate-spin text-black/50" /> : <Sparkles className="size-4" />}Generate 3 Viral Ideas
+                    {aiLoading ? <Loader2 className="size-4 animate-spin text-black/50" /> : <Sparkles className="size-4" />}{t.tiktok_ai_generate}
                   </Button>
                 </div>
                 <div className="md:col-span-2 space-y-3">

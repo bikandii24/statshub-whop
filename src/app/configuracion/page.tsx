@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 
 import { useT } from "@/i18n"
@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { useWorkspace } from "@/context/workspace-context"
 
 export default function ConfiguracionPage() {
+  const t = useT()
   const { user, accounts, workspaces, logout } = useWorkspace()
   const totalAccounts = accounts.length
   const totalWorkspaces = workspaces.length
@@ -38,11 +39,11 @@ export default function ConfiguracionPage() {
         </CardHeader>
         <CardContent className="space-y-1">
           {[
-            { label: "Name",                        value: user?.name  || "—" },
+            { label: t.settings_name,                        value: user?.name  || "—" },
             { label: "Email",                       value: user?.email || "—" },
-            { label: "Plan",                        value: "Free" },
-            { label: "Connected TikTok accounts",   value: `${totalAccounts} / 10` },
-            { label: "Active workspaces",           value: totalWorkspaces.toString() },
+            { label: t.settings_plan,                        value: "Free" },
+            { label: t.settings_connected_accounts,   value: `${totalAccounts} / 10` },
+            { label: t.settings_active_workspaces,           value: totalWorkspaces.toString() },
           ].map(item => (
             <div key={item.label} className="flex items-center justify-between py-2.5 border-b border-white/[0.05] last:border-0">
               <span className="text-sm text-muted-foreground/70 font-medium">{item.label}</span>
