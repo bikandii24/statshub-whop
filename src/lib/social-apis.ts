@@ -21,7 +21,9 @@ async function rapidFetch(host: string, path: string, params: Record<string, str
   })
   if (!res.ok) {
     const body = await res.text().catch(() => '')
-    throw new Error(`${host}${path} → HTTP ${res.status}: ${body.slice(0, 200)}`)
+    if (res.status === 403) throw new Error(`API not subscribed. Go to rapidapi.com and subscribe to ${host} (free tier available).`)
+    if (res.status === 429) throw new Error(`API rate limit reached (free tier: 100 req/month). Try again next month or upgrade the plan at rapidapi.com.`)
+    throw new Error(`${host}${path} → HTTP ${res.status}: ${body.slice(0, 150)}`)
   }
   return res.json()
 }
@@ -61,8 +63,8 @@ export async function fetchInstagramStats(username: string): Promise<FetchResult
   const host = 'instagram-api-fast-reliable-data-scraper.p.rapidapi.com'
   const clean = username.replace(/^@/, '').trim()
   try {
-    // 1. Profile — correct endpoint is /profile (not /user_profile_data)
-    const profile = await rapidFetch(host, '/profile', { username: clean })
+    // 1. Profile — endpoint for our subscription plan
+    const profile = await rapidFetch(host, '/user_profile_data', { username: clean })
     // Response can be { data: {...} } or flat object
     const d = profile?.data ?? profile
 
