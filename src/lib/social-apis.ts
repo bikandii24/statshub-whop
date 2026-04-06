@@ -57,54 +57,72 @@ interface FetchResult {
 }
 
 // ────────────────────────────────────────────────────────────────────────────
-// INSTAGRAM — instagram-profile-data-scraper.p.rapidapi.com (Solcode)
-// 500 free req/month — endpoint: GET /instagram/profile?username=xxx
+// INSTAGRAM — instagram-scraper-api-advanced.p.rapidapi.com (HookAPI)
+// 2000 free req/month — GET /api/user/info/{username}  (path param, no query)
+// Fields: data.followers, data.following, data.postsCount, data.profilePicture
 // ────────────────────────────────────────────────────────────────────────────
 export async function fetchInstagramStats(username: string): Promise<FetchResult> {
-  const host  = 'instagram-profile-data-scraper.p.rapidapi.com'
+  const host  = 'instagram-scraper-api-advanced.p.rapidapi.com'
   const clean = username.replace(/^@/, '').trim()
   try {
-    // 1. Profile — Solcode API
-    const raw = await rapidFetch(host, '/instagram/profile', { username: clean })
-    // Response may be flat or nested under .data / .user
-    const d = raw?.data ?? raw?.user ?? raw
-
-    if (!d || (!d.username && !d.full_name && !d.follower_count && !d.followers_count)) {
-      return { success: false, error: `Instagram: no data for @${clean}. Account may be private or not found.` }
+    // 1. Profile — path parameter, 12s timeout to avoid hanging
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), 12_000)
+    let raw: any
+    try {
+      const res = await fetch(`https://${host}/api/user/info/${encodeURIComponent(clean)}`, {
+        headers: {
+          'x-rapidapi-host': host,
+          'x-rapidapi-key': RAPIDAPI_KEY,
+        },
+        cache: 'no-store',
+        signal: controller.signal,
+      })
+      clearTimeout(timer)
+      if (!res.ok) {
+        const body = await res.text().catch(() => '')
+        if (res.status === 403) throw new Error(`API not subscribed. Subscribe to ${host} on rapidapi.com.`)
+        if (res.status === 429) throw new Error(`Rate limit reached. Try again later.`)
+        throw new Error(`HTTP ${res.status}: ${body.slice(0, 120)}`)
+      }
+      raw = await res.json()
+    } finally {
+      clearTimeout(timer)
     }
 
-    // 2. Recent posts (try standard posts endpoint)
+    // Response: { success: true, data: { username, name, profilePicture, followers, following, postsCount, bio } }
+    const d = raw?.data ?? raw
+    if (!d?.username && !d?.name) {
+      return { success: false, error: `Instagram: account @${clean} not found or private.` }
+    }
+
+    // 2. Posts (optional — not all plans include it)
     let recentPosts: RecentPost[] = []
     try {
-      const postsRaw = await rapidFetch(host, '/instagram/posts', { username: clean, count: '50' })
-      const items: any[] =
-        postsRaw?.data?.items ??
-        postsRaw?.items ??
-        postsRaw?.data ??
-        postsRaw?.posts ??
-        []
-      recentPosts = items.slice(0, 50).map((p: any) => {
-        const mediaType = p.media_type === 2 || p.product_type === 'clips' ? 'reel'
-          : p.media_type === 8 ? 'photo' : 'post'
-        const postUrl = p.shortcode ? `https://www.instagram.com/p/${p.shortcode}/`
-          : p.code ? `https://www.instagram.com/p/${p.code}/` : undefined
-        return {
-          id: String(p.pk ?? p.id ?? Math.random()),
-          description: (p.caption?.text ?? p.caption ?? '').slice(0, 120),
-          thumbnail: p.thumbnail_url ?? p.image_versions2?.candidates?.[0]?.url ?? p.display_url ?? p.thumbnail_src ?? '',
-          views: p.play_count ?? p.video_view_count ?? p.view_count ?? 0,
-          likes: p.like_count ?? p.likes_count ?? 0,
-          comments: p.comment_count ?? 0,
-          shares: p.share_count ?? 0,
-          createTime: p.taken_at ?? p.taken_at_timestamp ?? 0,
-          url: postUrl,
-          type: mediaType as RecentPost['type'],
-        }
+      const postsRes = await fetch(`https://${host}/api/user/posts/${encodeURIComponent(clean)}`, {
+        headers: { 'x-rapidapi-host': host, 'x-rapidapi-key': RAPIDAPI_KEY },
+        cache: 'no-store',
       })
+      if (postsRes.ok) {
+        const postsRaw = await postsRes.json()
+        const items: any[] = postsRaw?.data?.posts ?? postsRaw?.data ?? postsRaw?.posts ?? []
+        recentPosts = items.slice(0, 50).map((p: any) => ({
+          id: String(p.id ?? p.pk ?? Math.random()),
+          description: (p.caption ?? p.text ?? '').slice(0, 120),
+          thumbnail: p.thumbnailUrl ?? p.imageUrl ?? p.display_url ?? '',
+          views: p.videoViews ?? p.video_view_count ?? p.viewCount ?? 0,
+          likes: p.likes ?? p.likeCount ?? p.like_count ?? 0,
+          comments: p.comments ?? p.commentCount ?? p.comment_count ?? 0,
+          shares: 0,
+          createTime: p.timestamp ?? p.taken_at ?? 0,
+          url: p.url ?? (p.shortcode ? `https://www.instagram.com/p/${p.shortcode}/` : undefined),
+          type: (p.type === 'video' || p.isVideo ? 'reel' : 'post') as RecentPost['type'],
+        }))
+      }
     } catch { /* posts optional */ }
 
-    const followerCount = d.follower_count ?? d.followers_count ?? d.followers ?? 0
-    const postCount     = d.media_count   ?? d.post_count      ?? d.posts     ?? 0
+    const followerCount = d.followers  ?? 0
+    const postCount     = d.postsCount ?? 0
     const totalLikes    = recentPosts.reduce((s, p) => s + p.likes, 0)
     const engagement    = followerCount > 0 && recentPosts.length > 0
       ? parseFloat(((totalLikes / recentPosts.length / followerCount) * 100).toFixed(2))
@@ -115,18 +133,19 @@ export async function fetchInstagramStats(username: string): Promise<FetchResult
       data: {
         handle:    d.username ?? clean,
         followers: followerCount,
-        following: d.following_count ?? d.followee_count ?? d.following ?? 0,
+        following: d.following  ?? 0,
         posts:     postCount,
         views:     recentPosts.reduce((s, p) => s + p.views, 0),
-        avatar:    d.profile_pic_url ?? d.profile_picture ?? d.hd_profile_pic_url_info?.url ?? d.picture ?? '',
-        bio:       d.biography ?? d.bio ?? d.description ?? '',
-        verified:  d.is_verified ?? d.verified ?? false,
+        avatar:    d.profilePicture ?? d.profile_pic_url ?? '',
+        bio:       d.bio ?? d.biography ?? '',
+        verified:  d.isVerified ?? d.is_verified ?? false,
         lastSync:  fmtDate(),
         recentPosts,
       },
     }
   } catch (err: any) {
-    return { success: false, error: `Instagram: ${err.message ?? 'fetch failed'}` }
+    const msg = err.name === 'AbortError' ? 'Instagram API timeout (12s). Instagram may be blocking scrapers.' : err.message
+    return { success: false, error: `Instagram: ${msg}` }
   }
 }
 
