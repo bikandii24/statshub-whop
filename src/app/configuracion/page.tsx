@@ -1,5 +1,7 @@
 "use client"
 
+
+import { useT } from "@/i18n"
 import * as React from "react"
 import { Settings, User, Bell, LogOut, Info } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"

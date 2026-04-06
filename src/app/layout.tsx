@@ -30,6 +30,7 @@ export const metadata: Metadata = {
 };
 
 import { AppLayoutClient } from "@/components/app-layout-client";
+import { I18nProvider } from "@/i18n";
 
 export default function RootLayout({
   children,
@@ -47,9 +48,11 @@ export default function RootLayout({
           enableSystem={false}
           disableTransitionOnChange
         >
-          <AppLayoutClient>
-            {children}
-          </AppLayoutClient>
+          <I18nProvider>
+            <AppLayoutClient>
+              {children}
+            </AppLayoutClient>
+          </I18nProvider>
         </ThemeProvider>
       </body>
     </html>

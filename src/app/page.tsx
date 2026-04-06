@@ -1,5 +1,7 @@
 "use client"
 
+
+import { useT } from "@/i18n"
 import * as React from "react"
 import {
   Card,
@@ -25,6 +27,7 @@ import { Badge } from "@/components/ui/badge";
 import { useWorkspace } from "@/context/workspace-context";
 
 export default function Home() {
+  const t = useT()
   const { activeWorkspace, accounts, isLoading, user } = useWorkspace();
   
   // Filter accounts for active workspace
@@ -102,7 +105,7 @@ export default function Home() {
 
   const now = new Date();
   const hour = now.getHours();
-  const greeting = hour < 12 ? "Good morning" : hour < 19 ? "Good afternoon" : "Good evening";
+  const greeting = hour < 12 ? t.greeting_morning : hour < 19 ? t.greeting_afternoon : t.greeting_evening;
 
   return (
     <div className="space-y-10 animate-in fade-in slide-in-from-bottom-6 duration-700 ease-out">
@@ -117,26 +120,26 @@ export default function Home() {
             <div className="space-y-3">
               <div className="section-pill bg-emerald-500/10 text-emerald-400 border-emerald-500/20">
                 <div className="status-online scale-75" />
-                {activeWorkspace?.name || "Stats Hub"} active
+                {activeWorkspace?.name || "Stats Hub"} {t.dashboard_active}
               </div>
               <h1 className="text-3xl sm:text-5xl md:text-6xl font-black tracking-tighter leading-[0.95] text-white" style={{ fontFamily: "var(--font-syne)" }}>
                 {greeting},<br />
                 <span className="gradient-text">{user?.name || "User"}.</span>
               </h1>
               <p className="text-muted-foreground text-sm sm:text-base font-medium max-w-md leading-relaxed">
-                Consolidated dashboard for space <span className="text-white font-bold">{activeWorkspace?.name}</span>.
+                {t.dashboard_consolidated} <span className="text-white font-bold">{activeWorkspace?.name}</span>.
               </p>
             </div>
 
             <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
               <Link href="/gestor-tiktok" className="w-full sm:w-auto">
                 <Button className="font-bold h-11 px-7 rounded-full shadow-xl shadow-violet-500/25 hover:scale-105 active:scale-95 transition-all bg-violet-600 hover:bg-violet-500 text-white w-full">
-                  <Zap className="size-4 mr-2" fill="white" /> Manage Accounts
+                  <Zap className="size-4 mr-2" fill="white" /> {t.dashboard_manage}
                 </Button>
               </Link>
               <Link href="/analitica" className="w-full sm:w-auto">
                 <Button variant="outline" className="glass-sm h-11 px-7 rounded-full font-bold border-white/10 hover:bg-white/5 text-white/80 w-full">
-                  View Analytics
+                  {t.dashboard_view_analytics}
                 </Button>
               </Link>
             </div>
@@ -168,7 +171,7 @@ export default function Home() {
 
       {/* ── SECTION CARDS ── */}
       <div>
-        <h2 className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/40 mb-5">Tools</h2>
+        <h2 className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/40 mb-5">{t.dashboard_tools}</h2>
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 animate-stagger">
           {sections.map((section) => (
             <Link key={section.title} href={section.href} className="group">
@@ -202,7 +205,7 @@ export default function Home() {
         <Card className="glass border-white/[0.07] overflow-hidden">
           <CardHeader className="pb-4">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-base font-bold" style={{ fontFamily: "var(--font-syne)" }}>Accounts in this space</CardTitle>
+              <CardTitle className="text-base font-bold" style={{ fontFamily: "var(--font-syne)" }}>{t.dashboard_accounts_in_space}</CardTitle>
               <Badge variant="outline" className="glass-sm border-white/10 text-muted-foreground text-[9px] font-black uppercase tracking-widest px-2">
                 {activeWorkspace?.name}
               </Badge>
@@ -217,14 +220,14 @@ export default function Home() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-bold text-white/90 truncate">{acc.handle}</div>
-                    <div className="text-[11px] text-muted-foreground/60 font-medium truncate">{acc.followers.toLocaleString()} followers</div>
+                    <div className="text-[11px] text-muted-foreground/60 font-medium truncate">{acc.followers.toLocaleString()} {t.dashboard_followers}</div>
                   </div>
                   <div className="text-[10px] text-emerald-500 font-bold uppercase tracking-widest shrink-0">{acc.engagement}% eng.</div>
                 </div>
               ))}
               {workspaceAccounts.length === 0 && (
                 <div className="p-10 text-center text-muted-foreground/40 italic text-sm">
-                  No accounts connected to this space.
+                  {t.dashboard_no_accounts}
                 </div>
               )}
             </div>

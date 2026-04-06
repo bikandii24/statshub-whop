@@ -1,5 +1,7 @@
 "use client"
 
+
+import { useT } from "@/i18n"
 import * as React from "react"
 import {
   BarChart3, Calendar as CalendarIcon, TrendingUp, Users, Eye, Flame, Video, Zap,

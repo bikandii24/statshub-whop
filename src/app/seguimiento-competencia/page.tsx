@@ -1,5 +1,7 @@
 "use client"
 
+
+import { useT } from "@/i18n"
 import * as React from "react"
 import { TrendingUp, RefreshCcw, Loader2, BadgeCheck, Users, Heart, FileText, Flame, Search, AlertCircle, UserPlus, Trash2, Info, BookmarkPlus, Bell, BellRing, X, Eye, Play, MessageCircle, Share2 } from "lucide-react"
 import { Button } from "@/components/ui/button"

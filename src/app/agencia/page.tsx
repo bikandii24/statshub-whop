@@ -1,5 +1,7 @@
 "use client"
 
+
+import { useT } from "@/i18n"
 import * as React from "react"
 import { Building2, Download, Users, LineChart, Trash2, RefreshCcw, Loader2, Plus, BadgeCheck, X, CheckCircle2, AlertCircle, Upload } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
