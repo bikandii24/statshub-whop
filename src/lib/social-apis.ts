@@ -189,7 +189,9 @@ export async function fetchTwitterStats(username: string): Promise<FetchResult> 
       })
     } catch { /* timeline optional */ }
 
-    const followers = profile.followers_count ?? profile.follower_count ?? profile.followers ?? 0
+    // twitter-api45 uses non-standard field names:
+    // sub_count = followers | friends = following | desc = bio | profile = username string
+    const followers = profile.sub_count ?? profile.followers_count ?? profile.follower_count ?? profile.followers ?? 0
     const totalLikes = recentPosts.reduce((s, p) => s + p.likes, 0)
     const engagement = followers > 0 && recentPosts.length > 0
       ? parseFloat(((totalLikes / recentPosts.length / followers) * 100).toFixed(2))
@@ -200,11 +202,11 @@ export async function fetchTwitterStats(username: string): Promise<FetchResult> 
       data: {
         handle:    profile.screen_name ?? (typeof profile.profile === 'string' ? profile.profile : null) ?? clean,
         followers,
-        following:  profile.friends_count   ?? profile.following_count ?? profile.following  ?? 0,
-        posts:      profile.statuses_count  ?? profile.tweet_count     ?? profile.tweets     ?? 0,
+        following:  profile.friends        ?? profile.friends_count   ?? profile.following_count ?? 0,
+        posts:      profile.statuses_count ?? profile.tweet_count     ?? profile.tweets          ?? 0,
         views:      recentPosts.reduce((s, p) => s + p.views, 0),
-        avatar:     (profile.profile_image_url_https ?? profile.profile_image_url ?? '').replace('_normal', ''),
-        bio:        profile.description ?? profile.bio ?? '',
+        avatar:     (profile.profile_image_url_https ?? profile.profile_image_url ?? profile.avatar_url ?? '').replace('_normal', ''),
+        bio:        profile.desc ?? profile.description ?? profile.bio ?? '',
         verified:   profile.blue_verified ?? profile.is_blue_verified ?? profile.verified ?? false,
         lastSync:   fmtDate(),
         recentPosts,
