@@ -1,15 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
 
-const JWT_SECRET = process.env.JWT_SECRET ?? "statshub-dev-secret-change-in-prod"
+// Whop version: Whop controls access. No auth redirect needed.
+// Just pass all requests through and inject user info if token exists.
 
-// Lightweight JWT verify for Edge Runtime (no jsonwebtoken dependency)
 function base64UrlDecode(str: string): string {
   const base64 = str.replace(/-/g, "+").replace(/_/g, "/")
-  try {
-    return atob(base64)
-  } catch {
-    return ""
-  }
+  try { return atob(base64) } catch { return "" }
 }
 
 function verifyTokenEdge(token: string): { id: string; email: string; name: string } | null {
@@ -17,47 +13,32 @@ function verifyTokenEdge(token: string): { id: string; email: string; name: stri
     const parts = token.split(".")
     if (parts.length !== 3) return null
     const payload = JSON.parse(base64UrlDecode(parts[1]))
-    if (!payload?.id || !payload?.email) return null
-    // Check expiry
     if (payload.exp && Date.now() / 1000 > payload.exp) return null
-    return { id: payload.id, email: payload.email, name: payload.name ?? "" }
-  } catch {
-    return null
-  }
+    return { id: payload.id ?? "whop-anon", email: payload.email ?? "member@statshub.whop", name: payload.name ?? "Whop Member" }
+  } catch { return null }
 }
-
-const PUBLIC_PATHS = ["/login", "/api/auth"]
 
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
 
-  // Allow public paths
-  if (PUBLIC_PATHS.some(p => pathname.startsWith(p))) {
+  // Skip static files
+  if (pathname.startsWith("/_next") || pathname === "/favicon.ico") {
     return NextResponse.next()
   }
 
-  // Check auth cookie
+  // Try to inject user headers if token exists — but NEVER redirect to login
   const token = req.cookies.get("sh_token")?.value
-  if (!token) {
-    const url = req.nextUrl.clone()
-    url.pathname = "/login"
-    return NextResponse.redirect(url)
-  }
+  const bid    = req.cookies.get("whop_bid")?.value
 
-  const user = verifyTokenEdge(token)
-  if (!user) {
-    const url = req.nextUrl.clone()
-    url.pathname = "/login"
-    const res = NextResponse.redirect(url)
-    res.cookies.delete("sh_token")
-    return res
-  }
+  const user = token ? verifyTokenEdge(token) : null
+  const userId = user?.id ?? (bid ? `whop-${bid}` : "whop-anon")
+  const userEmail = user?.email ?? "member@statshub.whop"
+  const userName = user?.name ?? "Whop Member"
 
-  // Inject user info into headers for API routes
   const requestHeaders = new Headers(req.headers)
-  requestHeaders.set("x-user-id", user.id)
-  requestHeaders.set("x-user-email", user.email)
-  requestHeaders.set("x-user-name", user.name)
+  requestHeaders.set("x-user-id", userId)
+  requestHeaders.set("x-user-email", userEmail)
+  requestHeaders.set("x-user-name", userName)
 
   return NextResponse.next({ request: { headers: requestHeaders } })
 }
