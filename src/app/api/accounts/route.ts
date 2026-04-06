@@ -84,56 +84,86 @@ export async function POST(req: NextRequest) {
     const { db, workspaces, accounts } = await getUserData(user.id)
 
     if (action === 'add-account') {
-      // Rate limit TikTok scrapes: 5/hour per user (protects API credits)
-      const scrapeLimit = checkRateLimit(`scrape:${user.id}`, 5, 60 * 60 * 1000)
-      if (!scrapeLimit.allowed) {
-        return NextResponse.json({ error: 'Límite de consultas TikTok alcanzado. Espera 1 hora.' }, { status: 429 })
-      }
+      const platform = payload.platform ?? 'tiktok'
 
       // Always re-read fresh DB right before write to avoid stale data race
       const freshDB = await readDB()
       if (!freshDB.accounts[user.id]) freshDB.accounts[user.id] = []
       const freshAccounts = freshDB.accounts[user.id]
 
-      // Deduplication: reject duplicate handles
+      // Deduplication: reject duplicate handles per platform
       const normalizedHandle = payload.handle.toLowerCase().replace(/^@/, '')
       const duplicate = freshAccounts.find((a: any) =>
-        a.handle.toLowerCase().replace(/^@/, '') === normalizedHandle
+        a.handle.toLowerCase().replace(/^@/, '') === normalizedHandle &&
+        (a.platform ?? 'tiktok') === platform
       )
-      if (duplicate) return NextResponse.json({ error: `La cuenta ${payload.handle} ya está vinculada en este workspace.` }, { status: 409 })
+      if (duplicate) return NextResponse.json({ error: `Account ${payload.handle} is already linked (${platform}).` }, { status: 409 })
 
       // Max accounts limit per workspace
       const wsAccounts = freshAccounts.filter((a: any) => a.workspaceId === payload.workspaceId)
-      if (wsAccounts.length >= 10) return NextResponse.json({ error: 'Límite máximo de 10 cuentas por workspace alcanzado.' }, { status: 400 })
+      if (wsAccounts.length >= 10) return NextResponse.json({ error: 'Max 10 accounts per workspace reached.' }, { status: 400 })
 
-      const result = await fetchTikTokStats(payload.handle)
-      if (!result.success) return NextResponse.json({ error: result.error }, { status: 422 })
-      const stats = result.data!
-      const newAccount = {
-        id: `acc-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-        handle: stats.handle,
-        workspaceId: payload.workspaceId,
-        followers: stats.followers,
-        following: stats.following,
-        likes: stats.likes,
-        posts: stats.posts,
-        views: stats.views,
-        viewsIsReal: stats.viewsIsReal,
-        engagement: stats.engagement,
-        avatar: stats.avatar,
-        bio: stats.bio,
-        verified: stats.verified,
-        lastSync: stats.lastSync,
-        recentPosts: stats.recentPosts ?? [],
+      let newAccount: any
+
+      if (platform === 'tiktok') {
+        // Rate limit TikTok scrapes: 5/hour per user (protects API credits)
+        const scrapeLimit = checkRateLimit(`scrape:${user.id}`, 5, 60 * 60 * 1000)
+        if (!scrapeLimit.allowed) {
+          return NextResponse.json({ error: 'TikTok query limit reached. Wait 1 hour.' }, { status: 429 })
+        }
+        const result = await fetchTikTokStats(payload.handle)
+        if (!result.success) return NextResponse.json({ error: result.error }, { status: 422 })
+        const stats = result.data!
+        newAccount = {
+          id: `acc-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+          handle: stats.handle,
+          workspaceId: payload.workspaceId,
+          platform: 'tiktok',
+          followers: stats.followers,
+          following: stats.following,
+          likes: stats.likes,
+          posts: stats.posts,
+          views: stats.views,
+          viewsIsReal: stats.viewsIsReal,
+          engagement: stats.engagement,
+          avatar: stats.avatar,
+          bio: stats.bio,
+          verified: stats.verified,
+          lastSync: stats.lastSync,
+          recentPosts: stats.recentPosts ?? [],
+        }
+      } else {
+        // Non-TikTok: store manual data
+        const md = payload.manualData ?? {}
+        newAccount = {
+          id: `acc-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+          handle: normalizedHandle,
+          workspaceId: payload.workspaceId,
+          platform,
+          followers: md.followers ?? 0,
+          following: 0,
+          likes: 0,
+          posts: md.posts ?? 0,
+          views: md.views ?? 0,
+          viewsIsReal: false,
+          engagement: md.engagement ?? 0,
+          avatar: '',
+          bio: '',
+          verified: false,
+          lastSync: new Date().toISOString(),
+          recentPosts: [],
+        }
       }
-      // Re-read AGAIN after the slow TikTok fetch to get latest state
+
+      // Re-read AGAIN after any async op to get latest state
       const latestDB = await readDB()
       if (!latestDB.accounts[user.id]) latestDB.accounts[user.id] = []
       // Final dedup check
       const alreadyExists = latestDB.accounts[user.id].find((a: any) =>
-        a.handle.toLowerCase().replace(/^@/, '') === normalizedHandle
+        a.handle.toLowerCase().replace(/^@/, '') === normalizedHandle &&
+        (a.platform ?? 'tiktok') === platform
       )
-      if (alreadyExists) return NextResponse.json({ error: `La cuenta ${payload.handle} ya está vinculada.` }, { status: 409 })
+      if (alreadyExists) return NextResponse.json({ error: `Account ${payload.handle} already linked.` }, { status: 409 })
       latestDB.accounts[user.id].push(newAccount)
       latestDB.workspaces[user.id] = latestDB.workspaces[user.id] || freshDB.workspaces[user.id]
       await writeDB(latestDB)

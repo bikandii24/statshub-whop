@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 
 
 import { useT } from "@/i18n"
@@ -36,9 +36,9 @@ const METRIC_COLORS: Record<MetricKey, { stroke: string; gradId: string }> = {
   vistas:     { stroke: "oklch(0.70 0.18 340)", gradId: "gradVistas" },
 }
 const METRIC_LABELS: Record<MetricKey, string> = {
-  audiencia: t.analytics_kpi_audience, engagement: t.analytics_kpi_engagement,
-  alcance: t.analytics_kpi_reach, viralidad: "Virality Score",
-  vistas: t.analytics_kpi_views,
+  audiencia: "Total Audience", engagement: "Engagement Rate",
+  alcance: "Estimated Reach", viralidad: "Virality Score",
+  vistas: "Total Views",
 }
 const GOAL_TYPES = [
   { value: "followers", label: "Followers" },

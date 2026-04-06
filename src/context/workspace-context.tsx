@@ -21,15 +21,18 @@ export interface RecentPost {
   createTime: number
 }
 
+export type SocialPlatform = "tiktok" | "instagram" | "youtube" | "facebook" | "twitter"
+
 export interface Account {
   id: string
   handle: string
   workspaceId: string
+  platform: SocialPlatform
   followers: number
   following: number
   likes: number
   posts: number
-  views: number          // real play_count sum from /user/posts (last 30 days)
+  views: number          // real play_count sum / manual
   viewsIsReal?: boolean
   engagement: number
   avatar: string
@@ -66,7 +69,7 @@ interface WorkspaceContextType {
   notifications: NotificationItem[]
   activeWorkspace: Workspace | null
   setActiveWorkspace: (workspace: Workspace) => void
-  addAccount: (handle: string) => Promise<{ success: boolean; error?: string }>
+  addAccount: (handle: string, platform?: SocialPlatform, manualData?: { followers?: number; views?: number; posts?: number; engagement?: number }) => Promise<{ success: boolean; error?: string }>
   syncAccount: (id: string) => Promise<{ success: boolean; error?: string }>
   addWorkspace: (name: string, icon?: string, color?: string) => Promise<void>
   renameWorkspace: (id: string, name: string) => Promise<void>
@@ -156,15 +159,15 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     router.push("/login")
   }
 
-  const addAccount = async (handle: string) => {
+  const addAccount = async (handle: string, platform: SocialPlatform = "tiktok", manualData?: { followers?: number; views?: number; posts?: number; engagement?: number }) => {
     if (!activeWorkspace) return { success: false, error: "No active workspace" }
     const res = await fetch("/api/accounts", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "add-account", payload: { handle, workspaceId: activeWorkspace.id } })
+      body: JSON.stringify({ action: "add-account", payload: { handle, workspaceId: activeWorkspace.id, platform, manualData } })
     })
     const data = await res.json()
-    if (!res.ok) return { success: false, error: data.error ?? "Error al añadir cuenta" }
+    if (!res.ok) return { success: false, error: data.error ?? "Error adding account" }
     setAccounts(data.accounts ?? [])
     return { success: true }
   }
