@@ -98,10 +98,15 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     fetch("/api/auth")
       .then(r => r.json())
       .then(d => {
-        setUser(d.user ?? null)
+        // Whop version: always use returned user OR a fallback
+        setUser(d.user ?? { id: "whop-anon", email: "member@statshub.whop", name: "Whop Member" })
         setIsAuthLoading(false)
       })
-      .catch(() => setIsAuthLoading(false))
+      .catch(() => {
+        // If auth API fails (e.g. cold start), show dashboard anyway
+        setUser({ id: "whop-anon", email: "member@statshub.whop", name: "Whop Member" })
+        setIsAuthLoading(false)
+      })
   }, [])
 
   // Fetch workspace data once we have a user

@@ -8,21 +8,11 @@ import { AppSidebar } from "@/components/app-sidebar"
 import { WorkspaceProvider, useWorkspace } from "@/context/workspace-context"
 import { BarChart3, Loader2, Bell, BellRing, CheckCircle2, AlertCircle } from "lucide-react"
 
-// Inner guard — auto-creates a session for any visitor (no login needed in Whop version)
+// Inner guard — Whop controls access, so we just wait for session init then show dashboard
 function AuthGuard({ children }: { children: React.ReactNode }) {
-  const { user, isAuthLoading } = useWorkspace()
-  const [autoLogging, setAutoLogging] = React.useState(false)
+  const { isAuthLoading } = useWorkspace()
 
-  React.useEffect(() => {
-    if (!isAuthLoading && !user && !autoLogging) {
-      setAutoLogging(true)
-      fetch("/api/auth", { method: "GET" })
-        .then(() => window.location.reload())
-        .catch(() => setAutoLogging(false))
-    }
-  }, [user, isAuthLoading, autoLogging])
-
-  if (isAuthLoading || autoLogging) {
+  if (isAuthLoading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4" style={{ background: "oklch(0.07 0.018 260)" }}>
         <div className="size-14 rounded-2xl bg-gradient-to-br from-violet-600 to-purple-600 flex items-center justify-center shadow-2xl shadow-violet-500/30">
