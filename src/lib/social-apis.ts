@@ -150,14 +150,59 @@ export async function fetchYouTubeStats(handle: string): Promise<{
 }
 
 // ────────────────────────────────────────────────────────────────────────────
-// Facebook — no public scraper API available on RapidAPI (Meta blocked all)
-// We keep it as manual for now.
+// FACEBOOK — facebook-scraper-api4.p.rapidapi.com
+// endpoint: GET /get_facebook_pages_details_from_link?link=https://facebook.com/PAGE
+// Input: page URL or page slug (e.g. "coca-cola" or "https://facebook.com/coca-cola")
 // ────────────────────────────────────────────────────────────────────────────
-export async function fetchFacebookStats(_username: string): Promise<{
-  success: boolean; error?: string
+export async function fetchFacebookStats(input: string): Promise<{
+  success: boolean; error?: string; data?: {
+    handle: string; followers: number; following: number; posts: number
+    views: number; avatar: string; bio: string; verified: boolean; lastSync: string
+  }
 }> {
-  return {
-    success: false,
-    error: 'Facebook auto-sync not available. Meta blocks all third-party scrapers. Update manually.',
+  try {
+    const host = 'facebook-scraper-api4.p.rapidapi.com'
+
+    // Build the full Facebook URL if just a slug/username was given
+    const clean = input.replace(/^@/, '').trim()
+    const fbUrl = clean.startsWith('http')
+      ? clean
+      : `https://www.facebook.com/${clean}`
+
+    const json = await rapidFetch(host, '/get_facebook_pages_details_from_link', {
+      link: fbUrl,
+      exact_followers_count: 'true',
+      show_verified_badge: 'true',
+      page_section: 'default',
+    })
+
+    // API returns the page data directly or inside a data/page key
+    const d = json?.page ?? json?.data ?? json
+    const followers = d?.followers_count ?? d?.follower_count ?? 0
+    const fans      = d?.fan_count ?? d?.likes ?? 0
+
+    if (!d || (followers === 0 && fans === 0 && !d?.name)) {
+      return { success: false, error: 'Facebook page not found or no data returned.' }
+    }
+
+    // Use slug from URL as handle
+    const slug = fbUrl.replace(/\/$/, '').split('/').pop() ?? clean
+
+    return {
+      success: true,
+      data: {
+        handle: d.username ?? d.name ?? slug,
+        followers: followers || fans, // prefer followers_count, fall back to fan_count
+        following: 0,
+        posts: 0,
+        views: 0,
+        avatar: d.profile_picture ?? d.picture ?? d.logo ?? '',
+        bio: d.about ?? d.description ?? d.category ?? '',
+        verified: d.is_verified ?? d.verified ?? false,
+        lastSync: new Date().toISOString(),
+      },
+    }
+  } catch (err: any) {
+    return { success: false, error: err.message ?? 'Facebook fetch failed' }
   }
 }

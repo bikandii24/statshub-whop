@@ -19,7 +19,7 @@ const PLATFORM_CONFIG: Record<SocialPlatform, {
   tiktok:    { label: "TikTok",      emoji: "🎵", color: "text-pink-400",    bg: "bg-pink-500/10",    border: "border-pink-500/20",    glow: "rgba(236,72,153,0.8)",   placeholder: "username" },
   instagram: { label: "Instagram",   emoji: "📸", color: "text-rose-400",    bg: "bg-rose-500/10",    border: "border-rose-500/20",    glow: "rgba(251,113,133,0.8)",  placeholder: "username" },
   youtube:   { label: "YouTube",     emoji: "▶️", color: "text-red-400",     bg: "bg-red-500/10",     border: "border-red-500/20",     glow: "rgba(248,113,113,0.8)",  placeholder: "channel or @handle" },
-  facebook:  { label: "Facebook",    emoji: "👥", color: "text-blue-400",    bg: "bg-blue-500/10",    border: "border-blue-500/20",    glow: "rgba(96,165,250,0.8)",   placeholder: "page or profile" },
+  facebook:  { label: "Facebook",    emoji: "👥", color: "text-blue-400",    bg: "bg-blue-500/10",    border: "border-blue-500/20",    glow: "rgba(96,165,250,0.8)",   placeholder: "page-slug or full URL" },
   twitter:   { label: "X (Twitter)", emoji: "𝕏",  color: "text-sky-400",     bg: "bg-sky-500/10",     border: "border-sky-500/20",     glow: "rgba(56,189,248,0.8)",   placeholder: "username" },
 }
 const PLATFORMS = Object.keys(PLATFORM_CONFIG) as SocialPlatform[]
@@ -248,17 +248,15 @@ export default function GestorTikTokPage() {
                     </div>
                     {/* Actions */}
                     <div className="flex gap-1 shrink-0">
-                      {/* Sync button - all platforms except Facebook */}
-                      {platform !== "facebook" && (
-                        <button
-                          onClick={() => handleSync(account.id)}
-                          disabled={!!syncingId}
-                          className="size-8 flex items-center justify-center rounded-lg bg-white/5 hover:bg-white/10 text-muted-foreground/50 hover:text-white transition-all"
-                          title={t.tiktok_sync}
-                        >
-                          <RefreshCw className={`size-3.5 ${syncingId === account.id ? "animate-spin text-pink-400" : ""}`} />
-                        </button>
-                      )}
+                      {/* Sync button - all platforms */}
+                      <button
+                        onClick={() => handleSync(account.id)}
+                        disabled={!!syncingId}
+                        className="size-8 flex items-center justify-center rounded-lg bg-white/5 hover:bg-white/10 text-muted-foreground/50 hover:text-white transition-all"
+                        title={t.tiktok_sync}
+                      >
+                        <RefreshCw className={`size-3.5 ${syncingId === account.id ? "animate-spin text-pink-400" : ""}`} />
+                      </button>
                       {deleteConfirmId === account.id ? (
                         <button
                           onClick={() => { deleteAccount(account.id); setDeleteConfirmId(null) }}
@@ -297,7 +295,7 @@ export default function GestorTikTokPage() {
                   {/* Footer */}
                   <div className="mt-3 flex items-center justify-between">
                     <span className="text-[10px] text-muted-foreground/40 font-medium">
-                      {platform === "facebook" ? "Manual" : `Synced ${timeAgo(account.lastSync)}`}
+                      {`Synced ${timeAgo(account.lastSync)}`}
                     </span>
                     {(account.views || 0) > 0 && (
                       <span className="flex items-center gap-1 text-[10px] font-bold text-muted-foreground/50">
@@ -361,10 +359,12 @@ export default function GestorTikTokPage() {
             {/* Step 2: Handle */}
             <div className="mb-4">
               <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/50 mb-2 block">
-                Handle / Username
+                {selectedPlatform === "facebook" ? "Page URL or Slug" : "Handle / Username"}
               </label>
               <div className="flex items-center gap-2 glass-sm border border-white/10 rounded-xl px-4 py-3 focus-within:border-pink-500/40">
-                <span className="text-muted-foreground/50 font-bold">@</span>
+                {selectedPlatform !== "facebook" && (
+                  <span className="text-muted-foreground/50 font-bold">@</span>
+                )}
                 <input
                   autoFocus
                   value={handle}
@@ -374,6 +374,11 @@ export default function GestorTikTokPage() {
                   className="flex-1 bg-transparent text-white font-bold text-sm outline-none placeholder:text-muted-foreground/30"
                 />
               </div>
+              {selectedPlatform === "facebook" && (
+                <p className="text-[10px] text-muted-foreground/40 mt-1.5">
+                  e.g. <span className="text-muted-foreground/60 font-mono">coca-cola</span> or <span className="text-muted-foreground/60 font-mono">facebook.com/coca-cola</span>
+                </p>
+              )}
             </div>
 
             {/* Step 3: Manual data for non-TikTok */}
