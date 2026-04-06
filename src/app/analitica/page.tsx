@@ -11,7 +11,7 @@ import {
   ResponsiveContainer, Tooltip, XAxis, YAxis, Cell,
 } from "recharts"
 import { format } from "date-fns"
-import { es } from "date-fns/locale"
+import { enUS } from "date-fns/locale"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -34,12 +34,12 @@ const METRIC_COLORS: Record<MetricKey, { stroke: string; gradId: string }> = {
   vistas:     { stroke: "oklch(0.70 0.18 340)", gradId: "gradVistas" },
 }
 const METRIC_LABELS: Record<MetricKey, string> = {
-  audiencia: "Audiencia Total", engagement: "Tasa de Engagement",
-  alcance: "Alcance Estimado", viralidad: "Viralidad Score",
-  vistas: "Vistas Totales",
+  audiencia: "Total Audience", engagement: "Engagement Rate",
+  alcance: "Estimated Reach", viralidad: "Virality Score",
+  vistas: "Total Views",
 }
 const GOAL_TYPES = [
-  { value: "followers", label: "Seguidores" },
+  { value: "followers", label: "Followers" },
   { value: "engagement", label: "Engagement (%)" },
   { value: "likes", label: "Likes" },
   { value: "posts", label: "Posts" },
@@ -74,7 +74,7 @@ function MetricChart({ metric, data, index }: { metric: MetricKey; data: any[]; 
             <CardTitle className="text-sm font-bold" style={{ fontFamily: "var(--font-syne)" }}>
               {METRIC_LABELS[metric]}
             </CardTitle>
-            <CardDescription className="text-xs">Gráfico {index === 0 ? "A" : "B"}</CardDescription>
+            <CardDescription className="text-xs">Chart {index === 0 ? "A" : "B"}</CardDescription>
           </div>
           <Badge variant="outline" className="text-[9px] font-black uppercase px-2"
             style={{ borderColor: `${cfg.stroke}40`, color: cfg.stroke }}>
@@ -122,7 +122,7 @@ function MetricChart({ metric, data, index }: { metric: MetricKey; data: any[]; 
 
 // ── CSV Export ──────────────────────────────────────────────────────────
 function exportCSV(accounts: any[], workspaceName: string) {
-  const headers = ["Cuenta", "Seguidores", "Posts", "Likes", "Engagement (%)"]
+  const headers = ["Account", "Followers", "Posts", "Likes", "Engagement (%)"]
   const rows = accounts.map(a => [a.handle, a.followers, a.posts, a.likes, a.engagement])
   const csv = [headers, ...rows].map(r => r.join(",")).join("\n")
   const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8;" })
@@ -193,10 +193,10 @@ export default function AnaliticaPage() {
   const fmtN = (n: number) => n >= 1_000_000 ? `${(n / 1_000_000).toFixed(1)}M` : n >= 1_000 ? `${(n / 1_000).toFixed(1)}K` : n.toString()
 
   const kpiList = [
-    { title: "Audiencia Total",    value: fmtN(totalFollowers),    change: "Seguidores reales",   up: null,            icon: Users,      color: "text-emerald-400", bg: "bg-emerald-500/10", metricKey: "audiencia"  as MetricKey },
-    { title: "Vistas Totales",     value: fmtN(totalViews),        change: "Vistas reales · últimos 35 vídeos", up: null,          icon: Zap,        color: "text-pink-400",    bg: "bg-pink-500/10",    metricKey: "vistas"     as MetricKey },
-    { title: "Tasa de Engagement", value: `${avgEngNum.toFixed(1)}%`, change: "Promedio de cuentas", up: null,         icon: TrendingUp, color: "text-violet-400",  bg: "bg-violet-500/10",  metricKey: "engagement" as MetricKey },
-    { title: "Alcance Estimado",   value: fmtN(estimatedReach),    change: "Reach × engagement",  up: null,            icon: Eye,        color: "text-blue-400",   bg: "bg-blue-500/10",   metricKey: "alcance"    as MetricKey },
+    { title: "Total Audience",    value: fmtN(totalFollowers),    change: "Real followers",          up: null, icon: Users,      color: "text-emerald-400", bg: "bg-emerald-500/10", metricKey: "audiencia"  as MetricKey },
+    { title: "Total Views",       value: fmtN(totalViews),        change: "Real views · last 35 vids", up: null, icon: Zap,        color: "text-pink-400",    bg: "bg-pink-500/10",    metricKey: "vistas"     as MetricKey },
+    { title: "Engagement Rate",   value: `${avgEngNum.toFixed(1)}%`, change: "Accounts average",     up: null, icon: TrendingUp, color: "text-violet-400",  bg: "bg-violet-500/10",  metricKey: "engagement" as MetricKey },
+    { title: "Estimated Reach",   value: fmtN(estimatedReach),    change: "Reach × engagement",     up: null, icon: Eye,        color: "text-blue-400",   bg: "bg-blue-500/10",   metricKey: "alcance"    as MetricKey },
   ]
 
   // Real chart data from snapshots
@@ -213,7 +213,7 @@ export default function AnaliticaPage() {
       accSnaps.forEach(snap => {
         const d = new Date(snap.timestamp)
         if (d >= cutoff) {
-          const day = format(d, 'MMM dd', { locale: es })
+          const day = format(d, 'MMM dd', { locale: enUS })
           if (!dailyData[day]) {
             dailyData[day] = { name: day, audiencias: [], likes: [], posts: [], engagements: [] }
           }
@@ -249,10 +249,10 @@ export default function AnaliticaPage() {
       const vl = totalViews || 5000
 
       const stepConfig = dateFilter === "7d"
-        ? { steps: 7, labelFn: (i: number) => format(new Date(Date.now() - (6-i)*86400000), 'dd MMM', { locale: es }), variation: 0.04 }
+        ? { steps: 7, labelFn: (i: number) => format(new Date(Date.now() - (6-i)*86400000), 'dd MMM', { locale: enUS }), variation: 0.04 }
         : dateFilter === "30d"
-        ? { steps: 5, labelFn: (i: number) => format(new Date(Date.now() - (4-i)*7*86400000), "'Sem' dd MMM", { locale: es }), variation: 0.08 }
-        : { steps: 6, labelFn: (i: number) => format(new Date(Date.now() - (5-i)*15*86400000), 'dd MMM', { locale: es }), variation: 0.15 }
+        ? { steps: 5, labelFn: (i: number) => format(new Date(Date.now() - (4-i)*7*86400000), "'Wk' dd MMM", { locale: enUS }), variation: 0.08 }
+        : { steps: 6, labelFn: (i: number) => format(new Date(Date.now() - (5-i)*15*86400000), 'dd MMM', { locale: enUS }), variation: 0.15 }
 
       return Array.from({ length: stepConfig.steps }, (_, i) => {
         const ratio = 0.8 + (i / (stepConfig.steps - 1)) * 0.2  // grows from 80% to 100%
@@ -319,11 +319,11 @@ export default function AnaliticaPage() {
   }
 
   const TABS: { id: TabId; label: string; icon: any }[] = [
-    { id: "metricas",    label: "Métricas",     icon: BarChart3 },
-    { id: "comparar",   label: "Comparar",      icon: GitCompare },
-    { id: "mejor-hora", label: "Mejor Hora",    icon: Clock },
-    { id: "objetivos",  label: "Objetivos",     icon: Target },
-    { id: "roi",        label: "Monetización",  icon: Zap },
+    { id: "metricas",    label: "Metrics",       icon: BarChart3 },
+    { id: "comparar",   label: "Compare",        icon: GitCompare },
+    { id: "mejor-hora", label: "Best Time",      icon: Clock },
+    { id: "objetivos",  label: "Goals",          icon: Target },
+    { id: "roi",        label: "Monetization",   icon: Zap },
   ]
 
   const accA = wsAccounts.find(a => a.id === cmpA)
@@ -341,21 +341,21 @@ export default function AnaliticaPage() {
       <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div>
           <div className="section-pill bg-blue-500/10 text-blue-400 border-blue-500/20 mb-3">
-            <BarChart3 className="size-3" /> Reporte de Rendimiento
+            <BarChart3 className="size-3" /> Performance Report
           </div>
           <h1 className="text-2xl sm:text-4xl font-black tracking-tighter leading-tight text-white gap-2" style={{ fontFamily: "var(--font-syne)" }}>
-            Analítica de <span className="gradient-text-blue">Rendimiento</span>
+            Performance <span className="gradient-text-blue">Analytics</span>
           </h1>
           <p className="text-muted-foreground font-medium mt-1 text-sm">
-            Monitorea el crecimiento, engagement y alcance real.
+            Monitor growth, engagement and real reach.
           </p>
         </div>
         <div className="flex flex-col sm:flex-row items-center gap-3">
           <div className="flex items-center bg-white/5 border border-white/10 p-1 rounded-xl">
             {[
-              { id: "7d", label: "7 Días" },
-              { id: "30d", label: "30 Días" },
-              { id: "90d", label: "90 Días" }
+              { id: "7d", label: "7 Days" },
+              { id: "30d", label: "30 Days" },
+              { id: "90d", label: "90 Days" }
             ].map(f => (
               <button
                 key={f.id}
@@ -370,8 +370,8 @@ export default function AnaliticaPage() {
               </button>
             ))}
           </div>
-          <Button onClick={() => exportCSV(wsAccounts, activeWorkspace?.name || "espacio")} variant="outline" className="glass border-white/10 h-10 px-4 rounded-xl font-bold text-sm hover:bg-white/5 text-white flex items-center gap-2">
-            <Download className="size-4" /> Exportar CSV
+          <Button onClick={() => exportCSV(wsAccounts, activeWorkspace?.name || "workspace")} variant="outline" className="glass border-white/10 h-10 px-4 rounded-xl font-bold text-sm hover:bg-white/5 text-white flex items-center gap-2">
+            <Download className="size-4" /> Export CSV
           </Button>
         </div>
       </div>
@@ -402,7 +402,7 @@ export default function AnaliticaPage() {
             <div className="flex items-center gap-2 mb-3">
               <MousePointerClick className="size-3 text-muted-foreground/40" />
               <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/40">
-                Clic en métrica → Gráfico {nextSlot}
+                Click metric → Chart {nextSlot}
               </span>
             </div>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -442,17 +442,17 @@ export default function AnaliticaPage() {
           {/* Tabla cuentas */}
           <Card className="glass border-white/[0.07] overflow-hidden">
             <CardHeader>
-              <CardTitle className="text-base font-bold" style={{ fontFamily: "var(--font-syne)" }}>Rendimiento por Canal</CardTitle>
-              <CardDescription>Comparativa de cuentas conectadas a este espacio.</CardDescription>
+              <CardTitle className="text-base font-bold" style={{ fontFamily: "var(--font-syne)" }}>Performance by Channel</CardTitle>
+              <CardDescription>Metrics comparison for accounts linked to this workspace.</CardDescription>
             </CardHeader>
             <CardContent className="p-0">
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader className="bg-white/[0.03]">
                     <TableRow className="hover:bg-transparent border-white/[0.05]">
-                      <TableHead className="stat-chip h-10 pl-6">Cuenta</TableHead>
-                      <TableHead className="stat-chip h-10 text-right">Audiencia</TableHead>
-                      <TableHead className="stat-chip h-10 text-right">Vistas</TableHead>
+                      <TableHead className="stat-chip h-10 pl-6">Account</TableHead>
+                      <TableHead className="stat-chip h-10 text-right">Audience</TableHead>
+                      <TableHead className="stat-chip h-10 text-right">Views</TableHead>
                       <TableHead className="stat-chip h-10 text-right">Posts</TableHead>
                       <TableHead className="stat-chip h-10 text-right pr-6">Eng. Rate</TableHead>
                     </TableRow>
@@ -478,7 +478,7 @@ export default function AnaliticaPage() {
                       </TableRow>
                     ))}
                     {wsAccounts.length === 0 && (
-                      <TableRow><TableCell colSpan={4} className="py-16 text-center text-muted-foreground/40 italic">No hay cuentas vinculadas.</TableCell></TableRow>
+                      <TableRow><TableCell colSpan={4} className="py-16 text-center text-muted-foreground/40 italic">No linked accounts.</TableCell></TableRow>
                     )}
                   </TableBody>
                 </Table>
@@ -493,8 +493,8 @@ export default function AnaliticaPage() {
         <div className="space-y-6">
           <Card className="glass border-white/[0.07]">
             <CardHeader>
-              <CardTitle className="text-base font-bold" style={{ fontFamily: "var(--font-syne)" }}>Comparar Cuentas</CardTitle>
-              <CardDescription>Selecciona 2 cuentas para ver sus métricas lado a lado.</CardDescription>
+              <CardTitle className="text-base font-bold" style={{ fontFamily: "var(--font-syne)" }}>Compare Accounts</CardTitle>
+              <CardDescription>Select 2 accounts to see their metrics side by side.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
@@ -506,7 +506,7 @@ export default function AnaliticaPage() {
                       onChange={e => set(e.target.value)}
                       className="w-full h-10 rounded-xl glass border border-white/[0.07] px-3 text-sm font-bold text-white bg-transparent outline-none focus:border-violet-500/50 cursor-pointer"
                     >
-                      <option value="" className="bg-gray-900">Seleccionar...</option>
+                      <option value="" className="bg-gray-900">Select...</option>
                       {wsAccounts.map(a => <option key={a.id} value={a.id} className="bg-gray-900">{a.handle}</option>)}
                     </select>
                   </div>
@@ -527,16 +527,16 @@ export default function AnaliticaPage() {
                   </CardHeader>
                   <CardContent className="space-y-3">
                     {[
-                      { label: "Seguidores", value: acc.followers?.toLocaleString(), better: (accA.followers > accB.followers ? 0 : 1) === i },
-                      { label: "Engagement", value: `${acc.engagement}%`, better: (Number(accA.engagement) > Number(accB.engagement) ? 0 : 1) === i },
-                      { label: "Likes", value: acc.likes?.toLocaleString(), better: (accA.likes > accB.likes ? 0 : 1) === i },
-                      { label: "Posts", value: acc.posts?.toString(), better: (accA.posts > accB.posts ? 0 : 1) === i },
+                      { label: "Followers",  value: acc.followers?.toLocaleString(), better: (accA.followers > accB.followers ? 0 : 1) === i },
+                      { label: "Engagement", value: `${acc.engagement}%`,             better: (Number(accA.engagement) > Number(accB.engagement) ? 0 : 1) === i },
+                      { label: "Likes",      value: acc.likes?.toLocaleString(),      better: (accA.likes > accB.likes ? 0 : 1) === i },
+                      { label: "Posts",      value: acc.posts?.toString(),            better: (accA.posts > accB.posts ? 0 : 1) === i },
                     ].map(row => (
                       <div key={row.label} className="flex items-center justify-between py-2 border-b border-white/[0.04] last:border-0">
                         <span className="text-xs font-bold text-muted-foreground/60">{row.label}</span>
                         <div className="flex items-center gap-2">
                           <span className="text-sm font-black text-white">{row.value}</span>
-                          {row.better && <div className="size-1.5 rounded-full bg-emerald-400" title="Mayor" />}
+                          {row.better && <div className="size-1.5 rounded-full bg-emerald-400" title="Higher" />}
                         </div>
                       </div>
                     ))}
@@ -547,7 +547,7 @@ export default function AnaliticaPage() {
           ) : (
             <div className="flex flex-col items-center justify-center py-16 text-center gap-3">
               <GitCompare className="size-12 text-muted-foreground/20" />
-              <p className="text-sm text-muted-foreground/50 font-medium">Selecciona 2 cuentas para comparar sus métricas.</p>
+              <p className="text-sm text-muted-foreground/50 font-medium">Select 2 accounts to compare their metrics.</p>
             </div>
           )}
         </div>
@@ -558,9 +558,9 @@ export default function AnaliticaPage() {
         <div className="space-y-6">
           <div className="grid gap-4 md:grid-cols-3">
             {[
-              { label: "Mejor hora", value: bestHour.hora, sub: "Mayor engagement esperado", color: "text-emerald-400", bg: "bg-emerald-500/10" },
-              { label: "Peak nocturno", value: "20h – 22h", sub: "Franja óptima TikTok ES", color: "text-violet-400", bg: "bg-violet-500/10" },
-              { label: "Evitar", value: "02h – 05h", sub: "Mínima actividad de la audiencia", color: "text-red-400", bg: "bg-red-500/10" },
+              { label: "Best time", value: bestHour.hora, sub: "Highest expected engagement", color: "text-emerald-400", bg: "bg-emerald-500/10" },
+              { label: "Evening peak", value: "20h – 22h", sub: "Optimal TikTok window", color: "text-violet-400", bg: "bg-violet-500/10" },
+              { label: "Avoid", value: "02h – 05h", sub: "Minimum audience activity", color: "text-red-400", bg: "bg-red-500/10" },
             ].map(s => (
               <Card key={s.label} className="glass border-white/[0.07]">
                 <CardContent className="p-5">
@@ -575,8 +575,8 @@ export default function AnaliticaPage() {
 
           <Card className="glass border-white/[0.07] overflow-hidden">
             <CardHeader>
-              <CardTitle className="text-base font-bold" style={{ fontFamily: "var(--font-syne)" }}>Engagement por Hora del Día</CardTitle>
-              <CardDescription>Basado en patrones TikTok España + tu tasa de engagement actual.</CardDescription>
+              <CardTitle className="text-base font-bold" style={{ fontFamily: "var(--font-syne)" }}>Engagement by Hour of Day</CardTitle>
+              <CardDescription>Based on global TikTok patterns + your current engagement rate.</CardDescription>
             </CardHeader>
             <CardContent className="h-[300px] pt-2 pr-2">
               <ResponsiveContainer width="100%" height="100%">
@@ -610,7 +610,7 @@ export default function AnaliticaPage() {
           <Card className="glass border-violet-500/10">
             <CardContent className="p-5">
               <p className="text-xs text-muted-foreground/60 font-medium leading-relaxed">
-                <span className="text-violet-400 font-black">💡 Consejo:</span> Los datos muestran los horarios de mayor interacción en TikTok España. Publica entre las <strong className="text-white">20h y 22h</strong> para maximizar tu alcance. El miércoles y jueves son los mejores días de la semana para comenzar una tendencia.
+                <span className="text-violet-400 font-black">💡 Tip:</span> Data shows peak engagement windows on TikTok. Publish between <strong className="text-white">8pm and 10pm</strong> to maximize your reach. Wednesday and Thursday are the best days of the week to start a trend.
               </p>
             </CardContent>
           </Card>
@@ -625,13 +625,13 @@ export default function AnaliticaPage() {
             <CardHeader className="pb-3">
               <div className="flex items-center gap-3">
                 <div className="size-9 rounded-xl bg-violet-500/10 text-violet-400 flex items-center justify-center"><Target className="size-4" /></div>
-                <CardTitle className="text-base font-bold" style={{ fontFamily: "var(--font-syne)" }}>Nuevo Objetivo</CardTitle>
+                <CardTitle className="text-base font-bold" style={{ fontFamily: "var(--font-syne)" }}>New Goal</CardTitle>
               </div>
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/50 mb-1.5">Cuenta</p>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/50 mb-1.5">Account</p>
                   <select
                     value={newGoalAccount}
                     onChange={e => setNewGoalAccount(e.target.value)}
@@ -642,7 +642,7 @@ export default function AnaliticaPage() {
                   </select>
                 </div>
                 <div>
-                  <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/50 mb-1.5">Métrica</p>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/50 mb-1.5">Metric</p>
                   <select
                     value={newGoalType}
                     onChange={e => setNewGoalType(e.target.value)}
@@ -654,7 +654,7 @@ export default function AnaliticaPage() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/50 mb-1.5">Objetivo</p>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/50 mb-1.5">Target</p>
                   <Input
                     type="number" placeholder={newGoalType === "engagement" ? "5" : "10000"}
                     value={newGoalTarget} onChange={e => setNewGoalTarget(e.target.value)}
@@ -662,7 +662,7 @@ export default function AnaliticaPage() {
                   />
                 </div>
                 <div>
-                  <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/50 mb-1.5">Fecha límite (opcional)</p>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/50 mb-1.5">Deadline (optional)</p>
                   <Input
                     type="date" value={newGoalDeadline} onChange={e => setNewGoalDeadline(e.target.value)}
                     className="h-10 glass border-white/[0.07] rounded-xl font-bold text-white/80"
@@ -674,7 +674,7 @@ export default function AnaliticaPage() {
                 disabled={savingGoal || !newGoalAccount || !newGoalTarget}
                 className="w-full rounded-xl h-10 font-bold bg-violet-600 hover:bg-violet-500"
               >
-                <Plus className="size-4 mr-2" /> Añadir objetivo
+                <Plus className="size-4 mr-2" /> Add goal
               </Button>
             </CardContent>
           </Card>
@@ -683,7 +683,7 @@ export default function AnaliticaPage() {
           {goals.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
               <Target className="size-12 text-muted-foreground/20" />
-              <p className="text-sm text-muted-foreground/50 font-medium">Sin objetivos definidos aún.<br />Añade uno arriba para empezar a hacer seguimiento.</p>
+              <p className="text-sm text-muted-foreground/50 font-medium">No goals defined yet.<br />Add one above to start tracking.</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -701,8 +701,8 @@ export default function AnaliticaPage() {
                             {completed && <CheckCircle2 className="size-4 text-emerald-400" />}
                           </div>
                           <div className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/50">
-                            {typeLabel} · Meta: {goal.target.toLocaleString()}{goal.type === "engagement" ? "%" : ""}
-                            {goal.deadline && ` · ${format(new Date(goal.deadline), "d MMM", { locale: es })}`}
+                            {typeLabel} · Target: {goal.target.toLocaleString()}{goal.type === "engagement" ? "%" : ""}
+                            {goal.deadline && ` · ${format(new Date(goal.deadline), "d MMM", { locale: enUS })}`}
                           </div>
                         </div>
                         <button onClick={() => handleDeleteGoal(goal.id)} className="text-muted-foreground/30 hover:text-red-400 transition-colors">
@@ -735,16 +735,16 @@ export default function AnaliticaPage() {
           <Card className="glass border-white/[0.07]">
             <CardHeader>
               <CardTitle className="text-base font-bold flex items-center gap-2" style={{ fontFamily: "var(--font-syne)" }}>
-                <Zap className="size-4 text-emerald-400" /> Calculadora de Monetización (ROI Estimado)
+                <Zap className="size-4 text-emerald-400" /> Monetization Calculator (Estimated ROI)
               </CardTitle>
-              <CardDescription>Estima ingresos pasivos del fondo de creadores y precios justos para patrocinios según tus vistas.</CardDescription>
+              <CardDescription>Estimate passive income from the creator fund and fair sponsorship prices based on your views.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-8">
               <div className="grid gap-8 md:grid-cols-2">
                 <div className="space-y-6">
                   <div>
                     <div className="flex justify-between items-end mb-2">
-                      <label className="text-xs font-black uppercase tracking-widest text-muted-foreground/60">Vistas Mensuales</label>
+                      <label className="text-xs font-black uppercase tracking-widest text-muted-foreground/60">Monthly Views</label>
                       <span className="text-xl font-black text-white">{fmtN(roiViews)}</span>
                     </div>
                     <input 
@@ -759,7 +759,7 @@ export default function AnaliticaPage() {
 
                   <div>
                     <div className="flex justify-between items-end mb-2">
-                      <label className="text-xs font-black uppercase tracking-widest text-muted-foreground/60">RPM Estimado (€ por 1000 Vistas)</label>
+                      <label className="text-xs font-black uppercase tracking-widest text-muted-foreground/60">Estimated RPM ($ per 1,000 Views)</label>
                       <span className="text-xl font-black text-white">€{rpmRate.toFixed(2)}</span>
                     </div>
                     <input 

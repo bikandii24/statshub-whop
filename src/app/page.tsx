@@ -36,74 +36,73 @@ export default function Home() {
     ? (workspaceAccounts.reduce((sum, a) => sum + Number(a.engagement || 0), 0) / workspaceAccounts.length).toFixed(1) 
     : "0";
   const totalPosts = workspaceAccounts.reduce((sum, a) => sum + (a.posts || 0), 0);
-
   const totalLikes = workspaceAccounts.reduce((sum, a) => sum + (a.likes || 0), 0);
 
   const kpis = [
-    { label: "Total Likes", value: totalLikes >= 1000 ? `${(totalLikes/1000).toFixed(1)}K` : totalLikes.toString(), delta: "Sincronizado", icon: Flame, up: null },
+    { label: "Total Likes", value: totalLikes >= 1000 ? `${(totalLikes/1000).toFixed(1)}K` : totalLikes.toString(), delta: "Synced", icon: Flame, up: null },
     { label: "Engagement", value: `${avgEngagement}%`, delta: "+2.1pp", icon: Activity, up: true },
-    { label: "Audiencia", value: totalFollowers >= 1000 ? `${(totalFollowers/1000).toFixed(1)}K` : totalFollowers.toString(), delta: `+${Math.floor(totalFollowers*0.02)}`, icon: Users, up: true },
-    { label: "Total Posts", value: totalPosts.toString(), delta: "Sincronizado", icon: Flame, up: null },
+    { label: "Audience", value: totalFollowers >= 1000 ? `${(totalFollowers/1000).toFixed(1)}K` : totalFollowers.toString(), delta: `+${Math.floor(totalFollowers*0.02)}`, icon: Users, up: true },
+    { label: "Total Posts", value: totalPosts.toString(), delta: "Synced", icon: Flame, up: null },
   ];
 
   const sections = [
     {
-      title: "Gestor TikTok",
+      title: "TikTok Manager",
       href: "/gestor-tiktok",
-      description: "Viraliza tu contenido con herramientas de automatización.",
+      description: "Grow your content with automation tools.",
       icon: Video,
       color: "text-pink-400",
       bg: "bg-pink-500/10",
       border: "border-pink-500/20",
       glow: "glow-pink",
       stat: workspaceAccounts.length.toString(),
-      statLabel: "cuentas vinculadas",
+      statLabel: "linked accounts",
       chip: "bg-pink-500/10 text-pink-400 border-pink-500/20",
     },
     {
-      title: "Analítica",
+      title: "Analytics",
       href: "/analitica",
-      description: "Métricas en tiempo real de todas tus plataformas.",
+      description: "Real-time metrics across all your platforms.",
       icon: BarChart3,
       color: "text-blue-400",
       bg: "bg-blue-500/10",
       border: "border-blue-500/20",
       glow: "glow-blue",
       stat: `+${avgEngagement}%`,
-      statLabel: "engagement promedio",
+      statLabel: "avg engagement",
       chip: "bg-blue-500/10 text-blue-400 border-blue-500/20",
     },
     {
-      title: "Competencia",
+      title: "Competition",
       href: "/seguimiento-competencia",
-      description: "Anticípate a las tendencias de tus rivales.",
+      description: "Stay ahead of your rivals' trends.",
       icon: TrendingUp,
       color: "text-emerald-400",
       bg: "bg-emerald-500/10",
       border: "border-emerald-500/20",
       glow: "glow-green",
-      stat: "5 rivales",
-      statLabel: "en seguimiento",
+      stat: "5 rivals",
+      statLabel: "being tracked",
       chip: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
     },
     {
-      title: "Noticias",
+      title: "News",
       href: "/consolidado-noticias",
-      description: "Todo lo que necesitas saber, en un solo lugar.",
+      description: "Everything you need to know, in one place.",
       icon: Newspaper,
       color: "text-amber-400",
       bg: "bg-amber-500/10",
       border: "border-amber-500/20",
       glow: "glow-amber",
-      stat: "3 nuevas",
-      statLabel: "últimas 24h",
+      stat: "3 new",
+      statLabel: "last 24h",
       chip: "bg-amber-500/10 text-amber-400 border-amber-500/20",
     },
   ];
 
   const now = new Date();
   const hour = now.getHours();
-  const greeting = hour < 12 ? "Buenos días" : hour < 19 ? "Buenas tardes" : "Buenas noches";
+  const greeting = hour < 12 ? "Good morning" : hour < 19 ? "Good afternoon" : "Good evening";
 
   return (
     <div className="space-y-10 animate-in fade-in slide-in-from-bottom-6 duration-700 ease-out">
@@ -118,26 +117,26 @@ export default function Home() {
             <div className="space-y-3">
               <div className="section-pill bg-emerald-500/10 text-emerald-400 border-emerald-500/20">
                 <div className="status-online scale-75" />
-                {activeWorkspace?.name || "Stats Hub"} activo
+                {activeWorkspace?.name || "Stats Hub"} active
               </div>
               <h1 className="text-3xl sm:text-5xl md:text-6xl font-black tracking-tighter leading-[0.95] text-white" style={{ fontFamily: "var(--font-syne)" }}>
                 {greeting},<br />
-                <span className="gradient-text">{user?.name || "Usuario"}.</span>
+                <span className="gradient-text">{user?.name || "User"}.</span>
               </h1>
               <p className="text-muted-foreground text-sm sm:text-base font-medium max-w-md leading-relaxed">
-                Panel consolidado para el espacio <span className="text-white font-bold">{activeWorkspace?.name}</span>.
+                Consolidated dashboard for space <span className="text-white font-bold">{activeWorkspace?.name}</span>.
               </p>
             </div>
 
             <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
               <Link href="/gestor-tiktok" className="w-full sm:w-auto">
                 <Button className="font-bold h-11 px-7 rounded-full shadow-xl shadow-violet-500/25 hover:scale-105 active:scale-95 transition-all bg-violet-600 hover:bg-violet-500 text-white w-full">
-                  <Zap className="size-4 mr-2" fill="white" /> Gestionar Cuentas
+                  <Zap className="size-4 mr-2" fill="white" /> Manage Accounts
                 </Button>
               </Link>
               <Link href="/analitica" className="w-full sm:w-auto">
                 <Button variant="outline" className="glass-sm h-11 px-7 rounded-full font-bold border-white/10 hover:bg-white/5 text-white/80 w-full">
-                  Ver Analítica
+                  View Analytics
                 </Button>
               </Link>
             </div>
@@ -169,7 +168,7 @@ export default function Home() {
 
       {/* ── SECTION CARDS ── */}
       <div>
-        <h2 className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/40 mb-5">Herramientas</h2>
+        <h2 className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/40 mb-5">Tools</h2>
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 animate-stagger">
           {sections.map((section) => (
             <Link key={section.title} href={section.href} className="group">
@@ -203,7 +202,7 @@ export default function Home() {
         <Card className="glass border-white/[0.07] overflow-hidden">
           <CardHeader className="pb-4">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-base font-bold" style={{ fontFamily: "var(--font-syne)" }}>Cuentas en este espacio</CardTitle>
+              <CardTitle className="text-base font-bold" style={{ fontFamily: "var(--font-syne)" }}>Accounts in this space</CardTitle>
               <Badge variant="outline" className="glass-sm border-white/10 text-muted-foreground text-[9px] font-black uppercase tracking-widest px-2">
                 {activeWorkspace?.name}
               </Badge>
@@ -218,14 +217,14 @@ export default function Home() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-bold text-white/90 truncate">{acc.handle}</div>
-                    <div className="text-[11px] text-muted-foreground/60 font-medium truncate">{acc.followers.toLocaleString()} seguidores</div>
+                    <div className="text-[11px] text-muted-foreground/60 font-medium truncate">{acc.followers.toLocaleString()} followers</div>
                   </div>
                   <div className="text-[10px] text-emerald-500 font-bold uppercase tracking-widest shrink-0">{acc.engagement}% eng.</div>
                 </div>
               ))}
               {workspaceAccounts.length === 0 && (
                 <div className="p-10 text-center text-muted-foreground/40 italic text-sm">
-                  No hay cuentas conectadas a este espacio.
+                  No accounts connected to this space.
                 </div>
               )}
             </div>

@@ -25,15 +25,15 @@ import { usePathname } from "next/navigation"
 import { useWorkspace } from "@/context/workspace-context"
 
 const navMain = [
-  { title: "Dashboard",     url: "/",              icon: LayoutDashboard, color: "text-violet-400", activeColor: "bg-violet-500/15 text-violet-400 border-violet-500/25", hoverColor: "hover:bg-violet-500/5 hover:text-violet-300", glowColor: "rgba(139,92,246,0.8)" },
-  { title: "Gestor TikTok", url: "/gestor-tiktok", icon: Video,           color: "text-pink-400",   activeColor: "bg-pink-500/15 text-pink-400 border-pink-500/25",       hoverColor: "hover:bg-pink-500/5 hover:text-pink-300",     glowColor: "rgba(236,72,153,0.8)" },
+  { title: "Dashboard",      url: "/",              icon: LayoutDashboard, color: "text-violet-400", activeColor: "bg-violet-500/15 text-violet-400 border-violet-500/25", hoverColor: "hover:bg-violet-500/5 hover:text-violet-300", glowColor: "rgba(139,92,246,0.8)" },
+  { title: "TikTok Manager", url: "/gestor-tiktok", icon: Video,           color: "text-pink-400",   activeColor: "bg-pink-500/15 text-pink-400 border-pink-500/25",       hoverColor: "hover:bg-pink-500/5 hover:text-pink-300",     glowColor: "rgba(236,72,153,0.8)" },
 ]
 
 const navAnalytics = [
-  { title: "Analítica",   url: "/analitica",               icon: BarChart3,  color: "text-blue-400",    activeColor: "bg-blue-500/15 text-blue-400 border-blue-500/25",       hoverColor: "hover:bg-blue-500/5 hover:text-blue-300",     glowColor: "rgba(59,130,246,0.8)" },
-  { title: "Competencia", url: "/seguimiento-competencia", icon: TrendingUp, color: "text-emerald-400", activeColor: "bg-emerald-500/15 text-emerald-400 border-emerald-500/25", hoverColor: "hover:bg-emerald-500/5 hover:text-emerald-300", glowColor: "rgba(16,185,129,0.8)" },
-  { title: "Noticias",    url: "/consolidado-noticias",    icon: Newspaper,  color: "text-amber-400",   activeColor: "bg-amber-500/15 text-amber-400 border-amber-500/25",   hoverColor: "hover:bg-amber-500/5 hover:text-amber-300",   glowColor: "rgba(245,158,11,0.8)", badge: "3" },
-  { title: "Agencias (B2B)",url: "/agencia",                 icon: Folder,     color: "text-indigo-400",  activeColor: "bg-indigo-500/15 text-indigo-400 border-indigo-500/25", hoverColor: "hover:bg-indigo-500/5 hover:text-indigo-300", glowColor: "rgba(99,102,241,0.8)" },
+  { title: "Analytics",       url: "/analitica",               icon: BarChart3,  color: "text-blue-400",    activeColor: "bg-blue-500/15 text-blue-400 border-blue-500/25",       hoverColor: "hover:bg-blue-500/5 hover:text-blue-300",     glowColor: "rgba(59,130,246,0.8)" },
+  { title: "Competition",     url: "/seguimiento-competencia", icon: TrendingUp, color: "text-emerald-400", activeColor: "bg-emerald-500/15 text-emerald-400 border-emerald-500/25", hoverColor: "hover:bg-emerald-500/5 hover:text-emerald-300", glowColor: "rgba(16,185,129,0.8)" },
+  { title: "News",            url: "/consolidado-noticias",    icon: Newspaper,  color: "text-amber-400",   activeColor: "bg-amber-500/15 text-amber-400 border-amber-500/25",   hoverColor: "hover:bg-amber-500/5 hover:text-amber-300",   glowColor: "rgba(245,158,11,0.8)", badge: "3" },
+  { title: "Agencies (B2B)", url: "/agencia",                 icon: Folder,     color: "text-indigo-400",  activeColor: "bg-indigo-500/15 text-indigo-400 border-indigo-500/25", hoverColor: "hover:bg-indigo-500/5 hover:text-indigo-300", glowColor: "rgba(99,102,241,0.8)" },
 ]
 
 const iconMap: Record<string, any> = {
@@ -129,7 +129,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     >
       {/* ── HEADER ── */}
       <SidebarHeader className="pt-6 pb-4 px-4">
-        {/* Workspace Switcher — custom dropdown (reliable on all browsers) */}
+        {/* Workspace Switcher */}
         <div ref={wsRef} className="relative">
           <button
             onClick={() => { setWsOpen(o => !o); setAddingWs(false) }}
@@ -140,10 +140,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             </div>
             <div className="grid flex-1 text-left leading-tight ml-1 overflow-hidden">
               <span className="truncate font-black text-sm tracking-tighter text-white" style={{ fontFamily: "var(--font-syne)" }}>
-                {isLoading ? "Cargando..." : activeWorkspace?.name || "Mi Espacio"}
+                {isLoading ? "Loading..." : activeWorkspace?.name || "My Space"}
               </span>
               <span className="truncate text-[9px] font-black text-muted-foreground/50 uppercase tracking-[0.2em]">
-                Workspace activo
+                Active workspace
               </span>
             </div>
             <ChevronsUpDown className={`ml-auto size-4 text-muted-foreground/30 shrink-0 transition-transform duration-200 ${wsOpen ? "rotate-180" : ""}`} />
@@ -153,7 +153,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           {wsOpen && (
             <div className="absolute top-full left-0 right-0 mt-1.5 rounded-2xl glass border border-white/10 shadow-2xl shadow-black/40 z-[100] overflow-hidden">
               <div className="px-3 py-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground/50">
-                Mis Workspaces
+                My Workspaces
               </div>
               <div className="h-px bg-white/5 mx-2 mb-1" />
               <div className="max-h-48 overflow-y-auto">
@@ -203,12 +203,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                           >
                             <Pencil className="size-3" />
                           </button>
-                          {/* Delete — only if >1 workspace, requires confirm */}
+                          {/* Delete */}
                           {workspaces.length > 1 && (
                             confirmDeleteId === ws.id ? (
                               <button
                                 onClick={async e => { e.stopPropagation(); await deleteWorkspace(ws.id); setConfirmDeleteId(null) }}
-                                title="Confirmar borrado"
+                                title="Confirm deletion"
                                 className="size-5 flex items-center justify-center rounded bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-all"
                               >
                                 <Check className="size-3" />
@@ -216,7 +216,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                             ) : (
                               <button
                                 onClick={e => { e.stopPropagation(); setConfirmDeleteId(ws.id) }}
-                                title="Borrar espacio"
+                                title="Delete space"
                                 className="size-5 flex items-center justify-center rounded text-muted-foreground/30 hover:text-red-400 hover:bg-red-500/10 transition-all"
                               >
                                 <Trash2 className="size-3" />
@@ -234,7 +234,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 <div className="px-3 py-2 flex gap-2">
                   <input
                     autoFocus
-                    placeholder="Nombre del espacio"
+                    placeholder="Space name"
                     value={newWsName}
                     onChange={e => setNewWsName(e.target.value)}
                     onKeyDown={e => {
@@ -253,7 +253,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   <div className="flex size-8 items-center justify-center rounded-lg bg-white/5 border border-white/10">
                     <Plus className="size-4" />
                   </div>
-                  <span className="font-bold text-sm">Añadir espacio</span>
+                  <span className="font-bold text-sm">Add space</span>
                 </button>
               )}
             </div>
@@ -266,10 +266,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             {userInitial}
           </div>
           <div className="flex-1 min-w-0">
-            <div className="text-sm font-bold text-white truncate">{user?.name ?? "Usuario"}</div>
+            <div className="text-sm font-bold text-white truncate">{user?.name ?? "User"}</div>
             <div className="text-[9px] font-black text-muted-foreground/50 uppercase tracking-widest truncate">{user?.email ?? ""}</div>
           </div>
-          <button onClick={logout} title="Cerrar sesión" className="text-muted-foreground/30 hover:text-red-400 transition-colors shrink-0">
+          <button onClick={logout} title="Sign out" className="text-muted-foreground/30 hover:text-red-400 transition-colors shrink-0">
             <LogOut className="size-3.5" />
           </button>
         </div>
@@ -280,14 +280,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       {/* ── CONTENT ── */}
       <SidebarContent className="px-3 py-2">
         <SidebarGroup>
-          <SidebarGroupLabel className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground/30 px-2 mb-1">Principal</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground/30 px-2 mb-1">Main</SidebarGroupLabel>
           <SidebarMenu className="gap-1">{navMain.map(renderNavItem)}</SidebarMenu>
         </SidebarGroup>
 
         <div className="my-3 h-px bg-white/[0.05] mx-2" />
 
         <SidebarGroup>
-          <SidebarGroupLabel className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground/30 px-2 mb-1">Análisis</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground/30 px-2 mb-1">Analytics</SidebarGroupLabel>
           <SidebarMenu className="gap-1">{navAnalytics.map(renderNavItem)}</SidebarMenu>
         </SidebarGroup>
       </SidebarContent>
@@ -304,7 +304,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 <Link href="/configuracion" className="flex items-center gap-3 w-full">
                   <Settings className="size-4.5 text-muted-foreground/50 group-hover:rotate-90 transition-transform duration-500" />
                   <span className="font-semibold text-sm text-muted-foreground/60 group-hover:text-white transition-colors tracking-tight">
-                    Configuración
+                    Settings
                   </span>
                   <ChevronRight className="size-3.5 text-muted-foreground/30 ml-auto group-hover:translate-x-0.5 transition-transform" />
                 </Link>

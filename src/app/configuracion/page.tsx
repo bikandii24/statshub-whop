@@ -16,31 +16,31 @@ export default function ConfiguracionPage() {
       {/* Header */}
       <div>
         <div className="section-pill bg-violet-500/10 text-violet-400 border-violet-500/20 mb-3">
-          <Settings className="size-3" /> Configuración
+          <Settings className="size-3" /> Settings
         </div>
         <h1 className="text-2xl sm:text-4xl font-black tracking-tighter leading-tight text-white" style={{ fontFamily: "var(--font-syne)" }}>
-          Ajustes <span className="gradient-text">del Sistema</span>
+          System <span className="gradient-text">Settings</span>
         </h1>
-        <p className="text-muted-foreground font-medium mt-1 text-sm">Gestiona tu cuenta y preferencias.</p>
+        <p className="text-muted-foreground font-medium mt-1 text-sm">Manage your account and preferences.</p>
       </div>
 
-      {/* Cuenta */}
+      {/* Account */}
       <Card className="glass border-white/[0.07]">
         <CardHeader className="pb-3">
           <div className="flex items-center gap-3">
             <div className="size-9 rounded-xl bg-violet-500/10 text-violet-400 flex items-center justify-center">
               <User className="size-4" />
             </div>
-            <CardTitle className="text-base font-bold" style={{ fontFamily: "var(--font-syne)" }}>Mi Cuenta</CardTitle>
+            <CardTitle className="text-base font-bold" style={{ fontFamily: "var(--font-syne)" }}>My Account</CardTitle>
           </div>
         </CardHeader>
         <CardContent className="space-y-1">
           {[
-            { label: "Nombre",                         value: user?.name  || "—" },
-            { label: "Email",                          value: user?.email || "—" },
-            { label: "Plan",                           value: "Free" },
-            { label: "Cuentas TikTok conectadas",      value: `${totalAccounts} / 10` },
-            { label: "Workspaces activos",             value: totalWorkspaces.toString() },
+            { label: "Name",                        value: user?.name  || "—" },
+            { label: "Email",                       value: user?.email || "—" },
+            { label: "Plan",                        value: "Free" },
+            { label: "Connected TikTok accounts",   value: `${totalAccounts} / 10` },
+            { label: "Active workspaces",           value: totalWorkspaces.toString() },
           ].map(item => (
             <div key={item.label} className="flex items-center justify-between py-2.5 border-b border-white/[0.05] last:border-0">
               <span className="text-sm text-muted-foreground/70 font-medium">{item.label}</span>
@@ -50,23 +50,23 @@ export default function ConfiguracionPage() {
         </CardContent>
       </Card>
 
-      {/* Límites */}
+      {/* Limits */}
       <Card className="glass border-blue-500/10">
         <CardHeader className="pb-3">
           <div className="flex items-center gap-3">
             <div className="size-9 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center">
               <Info className="size-4" />
             </div>
-            <CardTitle className="text-base font-bold" style={{ fontFamily: "var(--font-syne)" }}>Límites del Plan Free</CardTitle>
+            <CardTitle className="text-base font-bold" style={{ fontFamily: "var(--font-syne)" }}>Free Plan Limits</CardTitle>
           </div>
         </CardHeader>
         <CardContent className="space-y-1">
           {[
-            { label: "Cuentas TikTok",        value: "10 por workspace" },
-            { label: "Actualizaciones",        value: "5 por hora" },
-            { label: "Workspaces",             value: "Ilimitados" },
-            { label: "Análisis de competencia",value: "Disponible" },
-            { label: "Exportación de datos",   value: "CSV disponible" },
+            { label: "TikTok accounts",       value: "10 per workspace" },
+            { label: "Syncs",                 value: "5 per hour" },
+            { label: "Workspaces",            value: "Unlimited" },
+            { label: "Competitor analysis",   value: "Available" },
+            { label: "Data export",           value: "CSV available" },
           ].map(item => (
             <div key={item.label} className="flex items-center justify-between py-2.5 border-b border-white/[0.05] last:border-0">
               <span className="text-sm text-muted-foreground/70 font-medium">{item.label}</span>
@@ -76,29 +76,29 @@ export default function ConfiguracionPage() {
         </CardContent>
       </Card>
 
-      {/* Notificaciones */}
+      {/* Notifications */}
       <Card className="glass border-white/[0.07]">
         <CardHeader className="pb-3">
           <div className="flex items-center gap-3">
             <div className="size-9 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center">
               <Bell className="size-4" />
             </div>
-            <CardTitle className="text-base font-bold" style={{ fontFamily: "var(--font-syne)" }}>Notificaciones</CardTitle>
+            <CardTitle className="text-base font-bold" style={{ fontFamily: "var(--font-syne)" }}>Notifications</CardTitle>
           </div>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground/50 font-medium italic">Las notificaciones de alertas de competidores están disponibles en la sección <strong className="text-white/60">Competencia</strong>.</p>
+          <p className="text-sm text-muted-foreground/50 font-medium italic">Competitor alert notifications are available in the <strong className="text-white/60">Competition</strong> section.</p>
         </CardContent>
       </Card>
 
-      {/* Cerrar sesión */}
+      {/* Sign out */}
       <div className="pt-2">
         <Button
           onClick={logout}
           variant="outline"
           className="w-full rounded-xl h-11 font-bold border-red-500/20 text-red-400 hover:bg-red-500/10 hover:border-red-500/40 transition-all"
         >
-          <LogOut className="size-4 mr-2" /> Cerrar Sesión
+          <LogOut className="size-4 mr-2" /> Sign Out
         </Button>
       </div>
     </div>

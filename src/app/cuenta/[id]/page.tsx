@@ -7,7 +7,7 @@ import { ArrowLeft, Users, Heart, Zap, LineChart, BadgeCheck, Eye, MessageCircle
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Area, AreaChart, Bar, BarChart as RechartsBarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
 import { format } from "date-fns"
-import { es } from "date-fns/locale"
+import { enUS } from "date-fns/locale"
 
 // ── Types & Config ──
 type MetricKey = "audiencia" | "engagement" | "alcance" | "vistas"
@@ -18,8 +18,8 @@ const METRIC_COLORS: Record<MetricKey, { stroke: string; gradId: string }> = {
   vistas:     { stroke: "oklch(0.70 0.18 340)", gradId: "gradVistasAccount" },
 }
 const METRIC_LABELS: Record<MetricKey, string> = {
-  audiencia: "Audiencia Total", engagement: "Engagement",
-  alcance: "Alcance", vistas: "Vistas Reales",
+  audiencia: "Total Audience", engagement: "Engagement",
+  alcance: "Reach", vistas: "Real Views",
 }
 
 const CustomTooltip = ({ active, payload, label, isPercent }: any) => {
@@ -94,8 +94,8 @@ export default function CuentaPage() {
   if (!account) {
     return (
       <div className="flex flex-col items-center justify-center p-20 gap-4">
-        <p className="text-muted-foreground">Cuenta no encontrada.</p>
-        <button onClick={() => router.back()} className="text-pink-400 font-bold">Volver atrás</button>
+        <p className="text-muted-foreground">Account not found.</p>
+        <button onClick={() => router.back()} className="text-pink-400 font-bold">Go back</button>
       </div>
     )
   }
@@ -117,7 +117,7 @@ export default function CuentaPage() {
     // Group snapshots by calendar day to avoid duplicate-date bars
     const byDay: Record<string, any> = {}
     accountSnapshots.forEach(snap => {
-      const dayKey = format(new Date(snap.timestamp), 'dd MMM', { locale: es })
+      const dayKey = format(new Date(snap.timestamp), 'dd MMM', { locale: enUS })
       if (!byDay[dayKey]) {
         byDay[dayKey] = { name: dayKey, followers: [], engagements: [], views: [] }
       }
@@ -153,7 +153,7 @@ export default function CuentaPage() {
       const f = Math.round(followers * r)
       const e = +(engagement * r).toFixed(1)
       return {
-        name: format(d, 'dd MMM', { locale: es }),
+        name: format(d, 'dd MMM', { locale: enUS }),
         audiencia: f,
         engagement: e,
         vistas: Math.round(views * r),
@@ -175,7 +175,7 @@ export default function CuentaPage() {
         onClick={() => router.back()}
         className="flex items-center gap-2 text-[10px] uppercase font-black tracking-widest text-muted-foreground/60 hover:text-white transition-colors"
       >
-        <ArrowLeft className="size-3" /> Volver
+        <ArrowLeft className="size-3" /> Back
       </button>
 
       {/* ── Header ── */}
@@ -196,7 +196,7 @@ export default function CuentaPage() {
             {account.verified && <BadgeCheck className="text-blue-400 size-5 sm:size-6 shrink-0" />}
           </h1>
           <p className="text-sm font-medium text-muted-foreground/80 mb-3 max-w-md text-center sm:text-left">
-            Analítica individual · capturas histórico-semanales.
+            Individual analytics · weekly historical snapshots.
           </p>
           <div className="flex flex-wrap items-center justify-center md:justify-start gap-4">
             <div className="flex items-center gap-2 text-sm bg-white/5 border border-white/10 px-3 py-1.5 rounded-lg">
@@ -224,14 +224,14 @@ export default function CuentaPage() {
       {account.recentPosts && account.recentPosts.length > 0 && (
         <div className="space-y-4">
           <h2 className="text-xl font-black text-white border-l-4 border-pink-500 pl-4" style={{ fontFamily: "var(--font-syne)" }}>
-            Últimas Publicaciones
+            Latest Posts
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {account.recentPosts.map((post) => {
               const fmtV = (n: number) => n >= 1_000_000 ? `${(n/1_000_000).toFixed(1)}M` : n >= 1_000 ? `${(n/1_000).toFixed(1)}K` : n.toString()
               const ago = post.createTime ? (() => {
                 const diff = Math.floor((Date.now()/1000 - post.createTime) / 86400)
-                return diff === 0 ? 'Hoy' : diff === 1 ? 'Ayer' : `Hace ${diff}d`
+                return diff === 0 ? 'Today' : diff === 1 ? 'Yesterday' : `${diff}d ago`
               })() : ''
               // Build TikTok URL — only if we have a real numeric/string ID
               const tiktokUrl = post.id && !post.id.startsWith('post-')
@@ -271,7 +271,7 @@ export default function CuentaPage() {
                     {ago && <div className="absolute top-2 right-2 text-[9px] font-black bg-black/70 backdrop-blur-sm text-white/80 rounded-lg px-2 py-1">{ago}</div>}
                     {tiktokUrl && (
                       <div className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <span className="text-[9px] font-black bg-pink-500/80 text-white rounded-lg px-2 py-1">Ver en TikTok ↗</span>
+                        <span className="text-[9px] font-black bg-pink-500/80 text-white rounded-lg px-2 py-1">Watch on TikTok ↗</span>
                       </div>
                     )}
                   </div>
@@ -299,13 +299,13 @@ export default function CuentaPage() {
       {/* ── ROI Dinámico de la Cuenta ── */}
       <div className="flex items-center justify-between mt-4 mb-4">
         <h2 className="text-2xl font-black text-white border-l-4 border-emerald-500 pl-4" style={{ fontFamily: "var(--font-syne)" }}>
-          ROI Dinámico de la Cuenta
+          Account Dynamic ROI
         </h2>
         <button
           onClick={() => window.print()}
           className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground/50 hover:text-white transition-colors border border-white/10 rounded-xl px-3 py-2 hover:bg-white/5"
         >
-          <Download className="size-3" /> Exportar PDF
+          <Download className="size-3" /> Export PDF
         </button>
       </div>
       <Card className="glass border-emerald-500/20 bg-emerald-500/5 relative overflow-hidden">

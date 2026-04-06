@@ -26,7 +26,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Stats Hub — TikTok Analytics",
-  description: "Analítica TikTok en tiempo real. Gestiona y analiza todas tus cuentas en un solo lugar.",
+  description: "Real-time TikTok analytics. Manage and analyze all your accounts in one place.",
 };
 
 import { AppLayoutClient } from "@/components/app-layout-client";
@@ -37,7 +37,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning>
       <body
         className={`${inter.variable} ${syne.variable} ${geistMono.variable} font-sans antialiased`}
       >
