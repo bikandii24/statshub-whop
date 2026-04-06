@@ -57,36 +57,37 @@ interface FetchResult {
 }
 
 // ────────────────────────────────────────────────────────────────────────────
-// INSTAGRAM — instagram-api-fast-reliable-data-scraper.p.rapidapi.com
+// INSTAGRAM — instagram-profile-data-scraper.p.rapidapi.com (Solcode)
+// 500 free req/month — endpoint: GET /instagram/profile?username=xxx
 // ────────────────────────────────────────────────────────────────────────────
 export async function fetchInstagramStats(username: string): Promise<FetchResult> {
-  const host = 'instagram-api-fast-reliable-data-scraper.p.rapidapi.com'
+  const host  = 'instagram-profile-data-scraper.p.rapidapi.com'
   const clean = username.replace(/^@/, '').trim()
   try {
-    // 1. Profile — endpoint for our subscription plan
-    const profile = await rapidFetch(host, '/user_profile_data', { username: clean })
-    // Response can be { data: {...} } or flat object
-    const d = profile?.data ?? profile
+    // 1. Profile — Solcode API
+    const raw = await rapidFetch(host, '/instagram/profile', { username: clean })
+    // Response may be flat or nested under .data / .user
+    const d = raw?.data ?? raw?.user ?? raw
 
-    // Consider success if we got at least a username back
-    if (!d || (!d.username && !d.full_name && !d.follower_count)) {
-      return { success: false, error: `Instagram: no data returned for @${clean}. Account may be private or not found.` }
+    if (!d || (!d.username && !d.full_name && !d.follower_count && !d.followers_count)) {
+      return { success: false, error: `Instagram: no data for @${clean}. Account may be private or not found.` }
     }
 
-    // 2. Recent posts (up to 50)
+    // 2. Recent posts (try standard posts endpoint)
     let recentPosts: RecentPost[] = []
     try {
-      const postsJson = await rapidFetch(host, '/user_posts', { username: clean, count: '50' })
+      const postsRaw = await rapidFetch(host, '/instagram/posts', { username: clean, count: '50' })
       const items: any[] =
-        postsJson?.data?.items ??
-        postsJson?.items ??
-        postsJson?.data ??
-        postsJson?.posts ??
+        postsRaw?.data?.items ??
+        postsRaw?.items ??
+        postsRaw?.data ??
+        postsRaw?.posts ??
         []
       recentPosts = items.slice(0, 50).map((p: any) => {
-        const mediaType = p.media_type === 2 || p.product_type === 'clips' ? 'reel' : p.media_type === 8 ? 'photo' : 'post'
-        const postUrl = p.shortcode ? `https://www.instagram.com/p/${p.shortcode}/` :
-          p.code ? `https://www.instagram.com/p/${p.code}/` : undefined
+        const mediaType = p.media_type === 2 || p.product_type === 'clips' ? 'reel'
+          : p.media_type === 8 ? 'photo' : 'post'
+        const postUrl = p.shortcode ? `https://www.instagram.com/p/${p.shortcode}/`
+          : p.code ? `https://www.instagram.com/p/${p.code}/` : undefined
         return {
           id: String(p.pk ?? p.id ?? Math.random()),
           description: (p.caption?.text ?? p.caption ?? '').slice(0, 120),
@@ -100,27 +101,27 @@ export async function fetchInstagramStats(username: string): Promise<FetchResult
           type: mediaType as RecentPost['type'],
         }
       })
-    } catch { /* posts endpoint optional */ }
+    } catch { /* posts optional */ }
 
     const followerCount = d.follower_count ?? d.followers_count ?? d.followers ?? 0
-    const postCount    = d.media_count ?? d.post_count ?? d.posts ?? 0
-    const totalLikes   = recentPosts.reduce((s, p) => s + p.likes, 0)
-    const engagement   = followerCount > 0 && recentPosts.length > 0
+    const postCount     = d.media_count   ?? d.post_count      ?? d.posts     ?? 0
+    const totalLikes    = recentPosts.reduce((s, p) => s + p.likes, 0)
+    const engagement    = followerCount > 0 && recentPosts.length > 0
       ? parseFloat(((totalLikes / recentPosts.length / followerCount) * 100).toFixed(2))
       : 0
 
     return {
       success: true,
       data: {
-        handle: d.username ?? clean,
+        handle:    d.username ?? clean,
         followers: followerCount,
         following: d.following_count ?? d.followee_count ?? d.following ?? 0,
-        posts: postCount,
-        views: recentPosts.reduce((s, p) => s + p.views, 0),
-        avatar: d.profile_pic_url ?? d.profile_picture ?? d.hd_profile_pic_url_info?.url ?? '',
-        bio: d.biography ?? d.bio ?? '',
-        verified: d.is_verified ?? d.verified ?? false,
-        lastSync: fmtDate(),
+        posts:     postCount,
+        views:     recentPosts.reduce((s, p) => s + p.views, 0),
+        avatar:    d.profile_pic_url ?? d.profile_picture ?? d.hd_profile_pic_url_info?.url ?? d.picture ?? '',
+        bio:       d.biography ?? d.bio ?? d.description ?? '',
+        verified:  d.is_verified ?? d.verified ?? false,
+        lastSync:  fmtDate(),
         recentPosts,
       },
     }

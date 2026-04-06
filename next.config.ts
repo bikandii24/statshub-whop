@@ -3,7 +3,7 @@ import type { NextConfig } from "next";
 // All RapidAPI hosts used in the app
 const RAPID_HOSTS = [
   "tiktok-scraper7.p.rapidapi.com",
-  "instagram-api-fast-reliable-data-scraper.p.rapidapi.com",
+  "instagram-profile-data-scraper.p.rapidapi.com",   // Solcode – 500 req/month free
   "twitter-api45.p.rapidapi.com",
   "youtube-v31.p.rapidapi.com",
   "facebook-scraper-api4.p.rapidapi.com",
