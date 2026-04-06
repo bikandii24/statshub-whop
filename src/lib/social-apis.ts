@@ -19,7 +19,10 @@ async function rapidFetch(host: string, path: string, params: Record<string, str
     },
     cache: 'no-store',
   })
-  if (!res.ok) throw new Error(`${host}${path} → ${res.status}`)
+  if (!res.ok) {
+    const body = await res.text().catch(() => '')
+    throw new Error(`${host}${path} → HTTP ${res.status}: ${body.slice(0, 200)}`)
+  }
   return res.json()
 }
 
@@ -56,13 +59,16 @@ interface FetchResult {
 // ────────────────────────────────────────────────────────────────────────────
 export async function fetchInstagramStats(username: string): Promise<FetchResult> {
   const host = 'instagram-api-fast-reliable-data-scraper.p.rapidapi.com'
-  const clean = username.replace(/^@/, '')
+  const clean = username.replace(/^@/, '').trim()
   try {
-    // 1. Profile
-    const profile = await rapidFetch(host, '/user_profile_data', { username: clean })
+    // 1. Profile — correct endpoint is /profile (not /user_profile_data)
+    const profile = await rapidFetch(host, '/profile', { username: clean })
+    // Response can be { data: {...} } or flat object
     const d = profile?.data ?? profile
-    if (!d || (!d.follower_count && !d.followers_count)) {
-      return { success: false, error: 'Instagram user not found or private.' }
+
+    // Consider success if we got at least a username back
+    if (!d || (!d.username && !d.full_name && !d.follower_count)) {
+      return { success: false, error: `Instagram: no data returned for @${clean}. Account may be private or not found.` }
     }
 
     // 2. Recent posts (up to 50)
@@ -77,11 +83,12 @@ export async function fetchInstagramStats(username: string): Promise<FetchResult
         []
       recentPosts = items.slice(0, 50).map((p: any) => {
         const mediaType = p.media_type === 2 || p.product_type === 'clips' ? 'reel' : p.media_type === 8 ? 'photo' : 'post'
-        const postUrl = p.shortcode ? `https://www.instagram.com/p/${p.shortcode}/` : undefined
+        const postUrl = p.shortcode ? `https://www.instagram.com/p/${p.shortcode}/` :
+          p.code ? `https://www.instagram.com/p/${p.code}/` : undefined
         return {
           id: String(p.pk ?? p.id ?? Math.random()),
           description: (p.caption?.text ?? p.caption ?? '').slice(0, 120),
-          thumbnail: p.thumbnail_url ?? p.image_versions2?.candidates?.[0]?.url ?? p.display_url ?? '',
+          thumbnail: p.thumbnail_url ?? p.image_versions2?.candidates?.[0]?.url ?? p.display_url ?? p.thumbnail_src ?? '',
           views: p.play_count ?? p.video_view_count ?? p.view_count ?? 0,
           likes: p.like_count ?? p.likes_count ?? 0,
           comments: p.comment_count ?? 0,
@@ -93,10 +100,10 @@ export async function fetchInstagramStats(username: string): Promise<FetchResult
       })
     } catch { /* posts endpoint optional */ }
 
-    const followerCount = d.follower_count ?? d.followers_count ?? 0
-    const postCount = d.media_count ?? d.post_count ?? 0
-    const totalLikes = recentPosts.reduce((s, p) => s + p.likes, 0)
-    const engagement = followerCount > 0 && recentPosts.length > 0
+    const followerCount = d.follower_count ?? d.followers_count ?? d.followers ?? 0
+    const postCount    = d.media_count ?? d.post_count ?? d.posts ?? 0
+    const totalLikes   = recentPosts.reduce((s, p) => s + p.likes, 0)
+    const engagement   = followerCount > 0 && recentPosts.length > 0
       ? parseFloat(((totalLikes / recentPosts.length / followerCount) * 100).toFixed(2))
       : 0
 
@@ -105,18 +112,18 @@ export async function fetchInstagramStats(username: string): Promise<FetchResult
       data: {
         handle: d.username ?? clean,
         followers: followerCount,
-        following: d.following_count ?? d.followee_count ?? 0,
+        following: d.following_count ?? d.followee_count ?? d.following ?? 0,
         posts: postCount,
         views: recentPosts.reduce((s, p) => s + p.views, 0),
-        avatar: d.profile_pic_url ?? d.profile_picture ?? '',
+        avatar: d.profile_pic_url ?? d.profile_picture ?? d.hd_profile_pic_url_info?.url ?? '',
         bio: d.biography ?? d.bio ?? '',
-        verified: d.is_verified ?? false,
+        verified: d.is_verified ?? d.verified ?? false,
         lastSync: fmtDate(),
         recentPosts,
       },
     }
   } catch (err: any) {
-    return { success: false, error: err.message ?? 'Instagram fetch failed' }
+    return { success: false, error: `Instagram: ${err.message ?? 'fetch failed'}` }
   }
 }
 
@@ -129,8 +136,9 @@ export async function fetchTwitterStats(username: string): Promise<FetchResult> 
   try {
     // 1. Profile
     const profile = await rapidFetch(host, '/screenname.php', { screenname: clean })
-    if (!profile?.followers_count && profile?.followers_count !== 0) {
-      return { success: false, error: 'Twitter/X user not found.' }
+    // Profile check — just need the response to have some valid data
+    if (!profile || typeof profile !== 'object') {
+      return { success: false, error: 'Twitter/X: no data returned for this user.' }
     }
 
     // 2. Recent tweets (timeline)

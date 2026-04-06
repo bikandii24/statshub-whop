@@ -381,31 +381,22 @@ export default function GestorTikTokPage() {
               )}
             </div>
 
-            {/* Step 3: Manual data for non-TikTok */}
+            {/* Auto-sync info — replaces manual stats form */}
             {selectedPlatform !== "tiktok" && (
-              <div className="mb-4 space-y-2">
-                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/50">Stats (optional)</p>
-                <div className="grid grid-cols-2 gap-2">
-                  {[
-                    { label: "Followers",   val: manualFollowers,   set: setManualFollowers },
-                    { label: "Views",       val: manualViews,       set: setManualViews },
-                    { label: "Posts",       val: manualPosts,       set: setManualPosts },
-                    { label: "Engagement%", val: manualEngagement,  set: setManualEngagement },
-                  ].map(f => (
-                    <div key={f.label} className="glass-sm border border-white/10 rounded-xl px-3 py-2">
-                      <p className="text-[8px] font-black uppercase text-muted-foreground/40 mb-1">{f.label}</p>
-                      <input
-                        type="number" min="0" value={f.val}
-                        onChange={e => f.set(e.target.value)}
-                        placeholder="0"
-                        className="w-full bg-transparent text-white font-bold text-sm outline-none placeholder:text-muted-foreground/20"
-                      />
-                    </div>
-                  ))}
+              <div className="mb-4">
+                <div className={`flex items-center gap-2 rounded-xl px-3 py-2.5 border text-xs font-bold ${
+                  selectedPlatform === "facebook"
+                    ? "bg-blue-500/10 border-blue-500/20 text-blue-400"
+                    : "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
+                }`}>
+                  <span className="text-base leading-none">
+                    {selectedPlatform === "facebook" ? "👥" : selectedPlatform === "instagram" ? "📸" : selectedPlatform === "youtube" ? "▶️" : "𝕏"}
+                  </span>
+                  {selectedPlatform === "facebook"
+                    ? "Stats fetched automatically via Facebook Scraper API"
+                    : `Stats will be fetched automatically from ${PLATFORM_CONFIG[selectedPlatform]?.label ?? selectedPlatform} API`
+                  }
                 </div>
-                <p className="text-[10px] text-muted-foreground/40 leading-snug">
-                  Auto-sync not available for this platform yet. Update manually.
-                </p>
               </div>
             )}
 
