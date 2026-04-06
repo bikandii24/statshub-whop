@@ -189,7 +189,7 @@ export async function fetchTwitterStats(username: string): Promise<FetchResult> 
       })
     } catch { /* timeline optional */ }
 
-    const followers = profile.followers_count ?? 0
+    const followers = profile.followers_count ?? profile.follower_count ?? profile.followers ?? 0
     const totalLikes = recentPosts.reduce((s, p) => s + p.likes, 0)
     const engagement = followers > 0 && recentPosts.length > 0
       ? parseFloat(((totalLikes / recentPosts.length / followers) * 100).toFixed(2))
@@ -198,20 +198,20 @@ export async function fetchTwitterStats(username: string): Promise<FetchResult> 
     return {
       success: true,
       data: {
-        handle: profile.screen_name ?? clean,
+        handle:    profile.screen_name ?? (typeof profile.profile === 'string' ? profile.profile : null) ?? clean,
         followers,
-        following: profile.friends_count ?? 0,
-        posts: profile.statuses_count ?? 0,
-        views: recentPosts.reduce((s, p) => s + p.views, 0),
-        avatar: (profile.profile_image_url_https ?? '').replace('_normal', ''),
-        bio: profile.description ?? '',
-        verified: profile.verified ?? profile.is_blue_verified ?? false,
-        lastSync: fmtDate(),
+        following:  profile.friends_count   ?? profile.following_count ?? profile.following  ?? 0,
+        posts:      profile.statuses_count  ?? profile.tweet_count     ?? profile.tweets     ?? 0,
+        views:      recentPosts.reduce((s, p) => s + p.views, 0),
+        avatar:     (profile.profile_image_url_https ?? profile.profile_image_url ?? '').replace('_normal', ''),
+        bio:        profile.description ?? profile.bio ?? '',
+        verified:   profile.blue_verified ?? profile.is_blue_verified ?? profile.verified ?? false,
+        lastSync:   fmtDate(),
         recentPosts,
       },
     }
   } catch (err: any) {
-    return { success: false, error: err.message ?? 'Twitter/X fetch failed' }
+    return { success: false, error: `Twitter/X: ${err.message ?? 'fetch failed'}` }
   }
 }
 
@@ -345,11 +345,13 @@ export async function fetchFacebookStats(input: string): Promise<FetchResult> {
       show_verified_badge: 'true',
       page_section: 'default',
     })
-    const d = pageJson?.page ?? pageJson?.data ?? pageJson
-    const followers = d?.followers_count ?? d?.follower_count ?? d?.fan_count ?? 0
+    // Facebook API returns an ARRAY of page objects — take first element
+    const raw = Array.isArray(pageJson) ? pageJson[0] : (pageJson?.page ?? pageJson?.data ?? pageJson)
+    const d = raw ?? {}
+    const followers = d?.followers_count ?? d?.follower_count ?? d?.fan_count ?? d?.likes ?? 0
 
-    if (!d || (!followers && !d?.name)) {
-      return { success: false, error: 'Facebook page not found or no data returned.' }
+    if (!d || (!followers && !d?.name && !d?.page_name)) {
+      return { success: false, error: 'Facebook: page not found or no data returned.' }
     }
 
     // 2. Recent page posts
@@ -388,15 +390,15 @@ export async function fetchFacebookStats(input: string): Promise<FetchResult> {
     return {
       success: true,
       data: {
-        handle: d.username ?? d.name ?? slug,
-        followers: followers || (d.fan_count ?? 0),
+        handle:    d.username ?? d.name ?? d.page_name ?? slug,
+        followers: followers || (d.fan_count ?? d.likes ?? 0),
         following: 0,
-        posts: 0,
-        views: 0,
-        avatar: d.profile_picture ?? d.picture ?? d.logo ?? '',
-        bio: d.about ?? d.description ?? d.category ?? '',
-        verified: d.is_verified ?? d.verified ?? false,
-        lastSync: fmtDate(),
+        posts:     d.posts_count ?? 0,
+        views:     0,
+        avatar:    d.profile_picture ?? d.picture ?? d.cover?.source ?? d.logo ?? '',
+        bio:       d.about ?? d.description ?? d.category ?? d.page_category ?? '',
+        verified:  d.is_verified ?? d.verified ?? false,
+        lastSync:  fmtDate(),
         recentPosts,
       },
     }

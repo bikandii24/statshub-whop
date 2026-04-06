@@ -4,6 +4,7 @@ import { useT } from "@/i18n"
 import * as React from "react"
 import { useWorkspace } from "@/context/workspace-context"
 import type { SocialPlatform } from "@/context/workspace-context"
+import { useRouter } from "next/navigation"
 import {
   Card, CardContent, CardHeader, CardTitle, CardDescription,
 } from "@/components/ui/card"
@@ -53,6 +54,7 @@ function PlatformBadge({ platform }: { platform: SocialPlatform }) {
 export default function GestorTikTokPage() {
   const t = useT()
   const { accounts, activeWorkspace, addAccount, syncAccount, deleteAccount, isLoading, apiConfigured } = useWorkspace()
+  const router = useRouter()
 
   // ── State ──
   const [activePlatform, setActivePlatform] = React.useState<SocialPlatform | "all">("all")
@@ -223,7 +225,9 @@ export default function GestorTikTokPage() {
             const cfg = PLATFORM_CONFIG[platform]
             const isTikTok = platform === "tiktok"
             return (
-              <Card key={account.id} className={`glass border-white/[0.07] hover:-translate-y-1 transition-all duration-300 overflow-hidden group`}
+              <Card key={account.id}
+                onClick={() => router.push(`/cuenta/${account.id}`)}
+                className={`glass border-white/[0.07] hover:-translate-y-1 transition-all duration-300 overflow-hidden group cursor-pointer`}
                 style={{ boxShadow: `0 0 0 0 transparent` }}
                 onMouseEnter={e => (e.currentTarget.style.boxShadow = `0 0 30px -10px ${cfg.glow}`)}
                 onMouseLeave={e => (e.currentTarget.style.boxShadow = `0 0 0 0 transparent`)}
@@ -248,9 +252,9 @@ export default function GestorTikTokPage() {
                     </div>
                     {/* Actions */}
                     <div className="flex gap-1 shrink-0">
-                      {/* Sync button - all platforms */}
+                      {/* Sync button */}
                       <button
-                        onClick={() => handleSync(account.id)}
+                        onClick={e => { e.stopPropagation(); handleSync(account.id) }}
                         disabled={!!syncingId}
                         className="size-8 flex items-center justify-center rounded-lg bg-white/5 hover:bg-white/10 text-muted-foreground/50 hover:text-white transition-all"
                         title={t.tiktok_sync}
@@ -259,12 +263,12 @@ export default function GestorTikTokPage() {
                       </button>
                       {deleteConfirmId === account.id ? (
                         <button
-                          onClick={() => { deleteAccount(account.id); setDeleteConfirmId(null) }}
+                          onClick={e => { e.stopPropagation(); deleteAccount(account.id); setDeleteConfirmId(null) }}
                           className="size-8 flex items-center justify-center rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-all"
                         >✓</button>
                       ) : (
                         <button
-                          onClick={() => setDeleteConfirmId(account.id)}
+                          onClick={e => { e.stopPropagation(); setDeleteConfirmId(account.id) }}
                           className="size-8 flex items-center justify-center rounded-lg bg-white/5 hover:bg-red-500/10 text-muted-foreground/50 hover:text-red-400 transition-all"
                           title={t.tiktok_delete}
                         >
