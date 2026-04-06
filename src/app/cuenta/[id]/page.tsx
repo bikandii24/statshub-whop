@@ -3,13 +3,42 @@
 import * as React from "react"
 import { useParams, useRouter } from "next/navigation"
 import { useWorkspace } from "@/context/workspace-context"
-import { ArrowLeft, Users, Heart, Zap, LineChart, BadgeCheck, Eye, MessageCircle, Share2, Download, Play } from "lucide-react"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import type { SocialPlatform, RecentPost } from "@/context/workspace-context"
+import { ArrowLeft, Users, Heart, Zap, LineChart, BadgeCheck, Eye, MessageCircle, Share2, Download, Play, Video, Film, Image } from "lucide-react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Area, AreaChart, Bar, BarChart as RechartsBarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
 import { format } from "date-fns"
 import { enUS } from "date-fns/locale"
 
-// ── Types & Config ──
+// ── Platform config ───────────────────────────────────────────────────────────
+const PLATFORM_CONFIG: Record<SocialPlatform, { emoji: string; color: string; name: string }> = {
+  tiktok:    { emoji: "🎵", color: "#EC4899", name: "TikTok" },
+  instagram: { emoji: "📸", color: "#F43F5E", name: "Instagram" },
+  youtube:   { emoji: "▶️", color: "#EF4444", name: "YouTube" },
+  facebook:  { emoji: "👥", color: "#3B82F6", name: "Facebook" },
+  twitter:   { emoji: "𝕏",  color: "#38BDF8", name: "X (Twitter)" },
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+const fmt = (n: number) =>
+  n >= 1_000_000 ? `${(n / 1_000_000).toFixed(1)}M`
+  : n >= 1_000   ? `${(n / 1_000).toFixed(1)}K`
+  : n.toString()
+
+function timeAgo(ts: number) {
+  if (!ts) return ''
+  const days = Math.floor((Date.now() / 1000 - ts) / 86400)
+  return days === 0 ? 'Today' : days === 1 ? 'Yesterday' : `${days}d ago`
+}
+
+function fmtDuration(secs: number): string {
+  if (!secs) return ''
+  const m = Math.floor(secs / 60)
+  const s = secs % 60
+  return `${m}:${String(s).padStart(2, '0')}`
+}
+
+// ── Chart components ──────────────────────────────────────────────────────────
 type MetricKey = "audiencia" | "engagement" | "alcance" | "vistas"
 const METRIC_COLORS: Record<MetricKey, { stroke: string; gradId: string }> = {
   audiencia:  { stroke: "oklch(0.72 0.19 150)", gradId: "gradAudienciaAccount" },
@@ -18,18 +47,17 @@ const METRIC_COLORS: Record<MetricKey, { stroke: string; gradId: string }> = {
   vistas:     { stroke: "oklch(0.70 0.18 340)", gradId: "gradVistasAccount" },
 }
 const METRIC_LABELS: Record<MetricKey, string> = {
-  audiencia: "Total Audience", engagement: "Engagement",
-  alcance: "Reach", vistas: "Real Views",
+  audiencia: "Total Audience", engagement: "Engagement", alcance: "Reach", vistas: "Views",
 }
 
 const CustomTooltip = ({ active, payload, label, isPercent }: any) => {
   if (!active || !payload?.length) return null
   const v = payload[0]?.value ?? 0
-  const fmt = isPercent ? `${v}%` : v > 1000 ? `${(v / 1000).toFixed(1)}K` : v.toString()
+  const fmtV = isPercent ? `${v}%` : v > 1000 ? `${(v / 1000).toFixed(1)}K` : v.toString()
   return (
     <div className="glass border-white/10 rounded-2xl px-4 py-3 text-sm shadow-2xl">
       <p className="font-black text-[10px] uppercase tracking-widest text-muted-foreground/60 mb-1">{label}</p>
-      <p className="font-black text-white">{fmt}</p>
+      <p className="font-black text-white">{fmtV}</p>
     </div>
   )
 }
@@ -39,7 +67,6 @@ function MetricChart({ metric, data }: { metric: MetricKey; data: any[] }) {
   const isBar = metric === "engagement"
   const isPercent = metric === "engagement"
   const yFmt = (v: number) => isPercent ? `${v}%` : v > 1000 ? `${(v / 1000).toFixed(0)}K` : v.toString()
-
   return (
     <Card className="glass border-white/[0.07] overflow-hidden">
       <CardHeader className="pb-2 flex flex-row items-center justify-between">
@@ -78,16 +105,119 @@ function MetricChart({ metric, data }: { metric: MetricKey; data: any[] }) {
   )
 }
 
+// ── Post card ─────────────────────────────────────────────────────────────────
+function PostCard({ post, platform, handle }: { post: RecentPost; platform: SocialPlatform; handle: string }) {
+  const isShort   = post.type === "short"
+  const isVertical = isShort || post.type === "reel"
+
+  // Build URL fallback for TikTok
+  const url = post.url ?? (
+    platform === "tiktok" && post.id && !post.id.startsWith('post-')
+      ? `https://www.tiktok.com/@${handle.replace(/^@/, '')}/video/${post.id}`
+      : null
+  )
+
+  const platformLabel = isShort ? "▶ Short" : post.type === "reel" ? "◎ Reel" : post.type === "tweet" ? "𝕏 Tweet" : null
+
+  return (
+    <a
+      href={url ?? undefined}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={`glass border-white/[0.07] rounded-2xl overflow-hidden group hover:-translate-y-1 transition-all duration-300 block ${url ? 'cursor-pointer' : 'cursor-default'}`}
+      onClick={e => !url && e.preventDefault()}
+    >
+      {/* Thumbnail - vertical for Shorts/Reels, horizontal otherwise */}
+      <div
+        className="relative w-full bg-black/40 overflow-hidden"
+        style={{ height: isVertical ? '200px' : '140px' }}
+      >
+        {post.thumbnail ? (
+          <img
+            src={post.thumbnail}
+            alt=""
+            referrerPolicy="no-referrer"
+            crossOrigin="anonymous"
+            className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
+            onError={e => { (e.target as HTMLImageElement).style.display = 'none' }}
+          />
+        ) : null}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+        {/* Play button */}
+        {(post.type !== "post" && post.type !== "tweet" && post.type !== "photo") && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="size-10 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center border border-white/20 group-hover:scale-110 transition-transform">
+              <Play className="size-5 text-white/70 ml-0.5" />
+            </div>
+          </div>
+        )}
+        {/* View count badge */}
+        {post.views > 0 && (
+          <div className="absolute bottom-2 left-2 flex items-center gap-1 bg-black/70 backdrop-blur-sm rounded-lg px-2 py-1">
+            <Eye className="size-3 text-pink-400" />
+            <span className="text-[11px] font-black text-white">{fmt(post.views)}</span>
+          </div>
+        )}
+        {/* Date */}
+        {post.createTime > 0 && (
+          <div className="absolute top-2 right-2 text-[9px] font-black bg-black/70 backdrop-blur-sm text-white/80 rounded-lg px-2 py-1">
+            {timeAgo(post.createTime)}
+          </div>
+        )}
+        {/* Content type badge */}
+        {platformLabel && (
+          <div className="absolute top-2 left-2">
+            <span className={`text-[9px] font-black rounded-lg px-2 py-1 ${
+              isShort ? 'bg-red-500/80 text-white' : 'bg-pink-500/80 text-white'
+            }`}>{platformLabel}</span>
+          </div>
+        )}
+        {/* Duration for Shorts */}
+        {post.duration && (
+          <div className="absolute bottom-2 right-2 text-[9px] font-black bg-black/70 text-white/80 rounded-lg px-1.5 py-0.5">
+            {fmtDuration(post.duration)}
+          </div>
+        )}
+        {/* Watch link badge on hover */}
+        {url && (
+          <div className="absolute inset-0 flex items-end justify-center pb-3 opacity-0 group-hover:opacity-100 transition-opacity">
+            <span className="text-[9px] font-black bg-white/20 backdrop-blur-sm text-white rounded-lg px-2 py-1">
+              Open ↗
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* Stats row */}
+      <div className="px-4 py-3">
+        {post.description && (
+          <p className="text-[11px] text-muted-foreground/60 leading-snug mb-2 line-clamp-2">
+            {post.description.replace(/#\w+/g, '').trim() || post.description.slice(0, 80)}
+          </p>
+        )}
+        <div className="flex items-center gap-4 text-[11px] font-black">
+          <span className="flex items-center gap-1.5 text-pink-400"><Heart className="size-3" /> {fmt(post.likes)}</span>
+          {post.comments > 0 && <span className="flex items-center gap-1.5 text-blue-400"><MessageCircle className="size-3" /> {fmt(post.comments)}</span>}
+          {post.shares > 0 && <span className="flex items-center gap-1.5 text-emerald-400"><Share2 className="size-3" /> {fmt(post.shares)}</span>}
+        </div>
+      </div>
+    </a>
+  )
+}
+
+// ── Main Page ─────────────────────────────────────────────────────────────────
 export default function CuentaPage() {
-  const params = useParams()
-  const router = useRouter()
+  const params  = useParams()
+  const router  = useRouter()
   const { accounts, snapshots } = useWorkspace()
-  
-  const idStr = Array.isArray(params.id) ? params.id[0] : params.id
+
+  const idStr   = Array.isArray(params.id) ? params.id[0] : params.id
   const account = accounts.find(a => a.id === idStr)
 
-  // Use real views stored from API (play_count sum from /user/posts)
-  const baseViews = account?.views || 0
+  const platform = (account?.platform ?? "tiktok") as SocialPlatform
+  const platformCfg = PLATFORM_CONFIG[platform]
+
+  const [postFilter, setPostFilter] = React.useState<"all" | "short" | "video">("all")
   const [rpmRate, setRpmRate] = React.useState(0.5)
   const [sponsorRate, setSponsorRate] = React.useState(2.0)
 
@@ -100,78 +230,59 @@ export default function CuentaPage() {
     )
   }
 
-  const fmt = (n: number) => {
-    if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
-    if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`
-    return n.toString()
-  }
-
-  // ── Snapshots History for this account ──
+  const baseViews = account.views || 0
   const accountSnapshots = snapshots[account.id] || []
 
   const chartData = React.useMemo(() => {
     const followers = account.followers || 100
     const engagement = account.engagement || 1
     const views = baseViews || 0
-
-    // Group snapshots by calendar day to avoid duplicate-date bars
     const byDay: Record<string, any> = {}
     accountSnapshots.forEach(snap => {
       const dayKey = format(new Date(snap.timestamp), 'dd MMM', { locale: enUS })
-      if (!byDay[dayKey]) {
-        byDay[dayKey] = { name: dayKey, followers: [], engagements: [], views: [] }
-      }
+      if (!byDay[dayKey]) byDay[dayKey] = { name: dayKey, followers: [], engagements: [], views: [] }
       byDay[dayKey].followers.push(snap.followers || 0)
       byDay[dayKey].engagements.push(snap.engagement || 0)
       byDay[dayKey].views.push(snap.views || views || 0)
     })
-
     const grouped = Object.values(byDay).map(d => {
       const avgF = Math.round(d.followers.reduce((a: number, b: number) => a + b, 0) / d.followers.length)
       const avgE = +(d.engagements.reduce((a: number, b: number) => a + b, 0) / d.engagements.length).toFixed(1)
       const avgV = Math.round(d.views.reduce((a: number, b: number) => a + b, 0) / d.views.length)
-      return {
-        name: d.name,
-        audiencia: avgF,
-        engagement: avgE,
-        vistas: avgV,
-        alcance: Math.round(avgF * (avgE / 100) * 10),
-      }
+      return { name: d.name, audiencia: avgF, engagement: avgE, vistas: avgV, alcance: Math.round(avgF * (avgE / 100) * 10) }
     })
-
-    // Only use real data if we have 2+ unique days
     if (grouped.length >= 2) return grouped
-
-    // Fallback: 7 daily points with realistic variation ending at today's real values
     const steps = 7
     return Array.from({ length: steps }, (_, i) => {
       const daysAgo = steps - 1 - i
       const d = new Date(Date.now() - daysAgo * 86400000)
-      const ratio = 0.80 + (i / (steps - 1)) * 0.20  // 80% → 100%
-      const noise = 1 + Math.sin(i * 2.3 + 1) * 0.04  // subtle seeded variation
+      const ratio = 0.80 + (i / (steps - 1)) * 0.20
+      const noise = 1 + Math.sin(i * 2.3 + 1) * 0.04
       const r = ratio * noise
       const f = Math.round(followers * r)
       const e = +(engagement * r).toFixed(1)
-      return {
-        name: format(d, 'dd MMM', { locale: enUS }),
-        audiencia: f,
-        engagement: e,
-        vistas: Math.round(views * r),
-        alcance: Math.round(f * (e / 100) * 10),
-      }
+      return { name: format(d, 'dd MMM', { locale: enUS }), audiencia: f, engagement: e, vistas: Math.round(views * r), alcance: Math.round(f * (e / 100) * 10) }
     })
   }, [accountSnapshots, account.followers, account.engagement, baseViews])
 
+  // ── Post filtering ──
+  const allPosts = account.recentPosts ?? []
+  const isYouTube = platform === "youtube"
+  const ytShorts  = isYouTube ? allPosts.filter(p => p.type === "short") : []
+  const ytVideos  = isYouTube ? allPosts.filter(p => p.type !== "short") : []
 
-  // ROI Calculator Math
-  const monthlyFondo = (baseViews / 1000) * rpmRate
-  const sponsorPrice = monthlyFondo * sponsorRate
+  const visiblePosts = isYouTube
+    ? (postFilter === "short" ? ytShorts : postFilter === "video" ? ytVideos : allPosts)
+    : allPosts
+
+  const monthlyFondo  = (baseViews / 1000) * rpmRate
+  const sponsorPrice  = monthlyFondo * sponsorRate
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-6 duration-700 ease-out max-w-5xl mx-auto">
-      
-      {/* ── Back Navigation ── */}
-      <button 
+
+      {/* ── Back ── */}
+      <button
         onClick={() => router.back()}
         className="flex items-center gap-2 text-[10px] uppercase font-black tracking-widest text-muted-foreground/60 hover:text-white transition-colors"
       >
@@ -180,39 +291,53 @@ export default function CuentaPage() {
 
       {/* ── Header ── */}
       <div className="flex flex-col sm:flex-row items-center gap-4 glass border-white/[0.07] p-5 sm:p-8 rounded-3xl relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-pink-500/10 rounded-full blur-[80px]" />
-        
+        <div className="absolute top-0 right-0 w-64 h-64 rounded-full blur-[80px]"
+          style={{ background: `${platformCfg.color}20` }} />
+
         {account.avatar ? (
-          <img src={account.avatar} alt={account.handle} className="size-24 rounded-2xl object-cover shadow-xl shadow-pink-500/20" />
+          <img src={account.avatar} alt={account.handle} className="size-24 rounded-2xl object-cover shadow-xl" style={{ boxShadow: `0 20px 40px ${platformCfg.color}30` }} />
         ) : (
-          <div className="size-24 rounded-2xl bg-pink-500/20 flex flex-col items-center justify-center text-pink-400">
-            <span className="text-3xl font-black">@</span>
+          <div className="size-24 rounded-2xl flex flex-col items-center justify-center text-4xl" style={{ background: `${platformCfg.color}20` }}>
+            {platformCfg.emoji}
           </div>
         )}
 
         <div className="flex-1 min-w-0 text-center md:text-left z-10">
+          <div className="flex items-center justify-center md:justify-start gap-2 mb-1">
+            <span className="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border"
+              style={{ color: platformCfg.color, background: `${platformCfg.color}10`, borderColor: `${platformCfg.color}30` }}>
+              {platformCfg.emoji} {platformCfg.name}
+            </span>
+          </div>
           <h1 className="text-2xl sm:text-4xl font-black text-white flex items-center justify-center md:justify-start gap-2 mb-2 break-all min-w-0" style={{ fontFamily: "var(--font-syne)" }}>
             <span className="min-w-0 break-all">{account.handle}</span>
             {account.verified && <BadgeCheck className="text-blue-400 size-5 sm:size-6 shrink-0" />}
           </h1>
-          <p className="text-sm font-medium text-muted-foreground/80 mb-3 max-w-md text-center sm:text-left">
-            Individual analytics · weekly historical snapshots.
-          </p>
-          <div className="flex flex-wrap items-center justify-center md:justify-start gap-4">
+          {account.bio && <p className="text-sm text-muted-foreground/60 mb-3 max-w-md">{account.bio}</p>}
+          <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
             <div className="flex items-center gap-2 text-sm bg-white/5 border border-white/10 px-3 py-1.5 rounded-lg">
               <Users className="size-4 text-emerald-400" /> <span className="font-bold text-white">{fmt(account.followers)}</span>
             </div>
-            <div className="flex items-center gap-2 text-sm bg-white/5 border border-white/10 px-3 py-1.5 rounded-lg">
-              <Heart className="size-4 text-pink-400" /> <span className="font-bold text-white">{fmt(account.likes||0)}</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm bg-white/5 border border-white/10 px-3 py-1.5 rounded-lg">
-              <Zap className="size-4 text-violet-400" /> <span className="font-bold text-white">{account.engagement}% Eng.</span>
-            </div>
+            {account.likes > 0 && (
+              <div className="flex items-center gap-2 text-sm bg-white/5 border border-white/10 px-3 py-1.5 rounded-lg">
+                <Heart className="size-4 text-pink-400" /> <span className="font-bold text-white">{fmt(account.likes)}</span>
+              </div>
+            )}
+            {account.engagement > 0 && (
+              <div className="flex items-center gap-2 text-sm bg-white/5 border border-white/10 px-3 py-1.5 rounded-lg">
+                <Zap className="size-4 text-violet-400" /> <span className="font-bold text-white">{account.engagement}% Eng.</span>
+              </div>
+            )}
+            {account.posts > 0 && (
+              <div className="flex items-center gap-2 text-sm bg-white/5 border border-white/10 px-3 py-1.5 rounded-lg">
+                <Film className="size-4 text-amber-400" /> <span className="font-bold text-white">{fmt(account.posts)} posts</span>
+              </div>
+            )}
           </div>
         </div>
       </div>
 
-      {/* ── Charts Grid ── */}
+      {/* ── Charts ── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <MetricChart metric="audiencia" data={chartData} />
         <MetricChart metric="vistas" data={chartData} />
@@ -220,83 +345,64 @@ export default function CuentaPage() {
         <MetricChart metric="alcance" data={chartData} />
       </div>
 
-      {/* ── Últimas Publicaciones ── */}
-      {account.recentPosts && account.recentPosts.length > 0 && (
+      {/* ── Posts Section ── */}
+      {allPosts.length > 0 && (
         <div className="space-y-4">
-          <h2 className="text-xl font-black text-white border-l-4 border-pink-500 pl-4" style={{ fontFamily: "var(--font-syne)" }}>
-            Latest Posts
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {account.recentPosts.map((post) => {
-              const fmtV = (n: number) => n >= 1_000_000 ? `${(n/1_000_000).toFixed(1)}M` : n >= 1_000 ? `${(n/1_000).toFixed(1)}K` : n.toString()
-              const ago = post.createTime ? (() => {
-                const diff = Math.floor((Date.now()/1000 - post.createTime) / 86400)
-                return diff === 0 ? 'Today' : diff === 1 ? 'Yesterday' : `${diff}d ago`
-              })() : ''
-              // Build TikTok URL — only if we have a real numeric/string ID
-              const tiktokUrl = post.id && !post.id.startsWith('post-')
-                ? `https://www.tiktok.com/@${account.handle.replace(/^@/, '')}/video/${post.id}`
-                : null
-              return (
-                <a
-                  key={post.id}
-                  href={tiktokUrl ?? undefined}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={`glass border-white/[0.07] rounded-2xl overflow-hidden group hover:-translate-y-1 transition-all duration-300 block ${tiktokUrl ? 'cursor-pointer' : 'cursor-default'}`}
-                  onClick={e => !tiktokUrl && e.preventDefault()}
-                >
-                  {/* Thumbnail */}
-                  <div className="relative w-full bg-black/40 overflow-hidden" style={{ height: '140px' }}>
-                    {post.thumbnail ? (
-                      <img
-                        src={post.thumbnail}
-                        alt=""
-                        referrerPolicy="no-referrer"
-                        crossOrigin="anonymous"
-                        className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
-                        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
-                      />
-                    ) : null}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="size-10 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center border border-white/20 group-hover:scale-110 transition-transform">
-                        <Play className="size-5 text-white/70 ml-0.5" />
-                      </div>
-                    </div>
-                    <div className="absolute bottom-2 left-2 flex items-center gap-1 bg-black/70 backdrop-blur-sm rounded-lg px-2 py-1">
-                      <Eye className="size-3 text-pink-400" />
-                      <span className="text-[11px] font-black text-white">{fmtV(post.views)}</span>
-                    </div>
-                    {ago && <div className="absolute top-2 right-2 text-[9px] font-black bg-black/70 backdrop-blur-sm text-white/80 rounded-lg px-2 py-1">{ago}</div>}
-                    {tiktokUrl && (
-                      <div className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <span className="text-[9px] font-black bg-pink-500/80 text-white rounded-lg px-2 py-1">Watch on TikTok ↗</span>
-                      </div>
-                    )}
-                  </div>
-                  {/* Stats row */}
-                  <div className="px-4 py-3">
-                    {post.description && (
-                      <p className="text-[11px] text-muted-foreground/60 leading-snug mb-2 line-clamp-2">
-                        {post.description.replace(/#\w+/g, '').trim() || post.description.slice(0, 60)}
-                      </p>
-                    )}
-                    <div className="flex items-center gap-4 text-[11px] font-black">
-                      <span className="flex items-center gap-1.5 text-pink-400"><Heart className="size-3" /> {fmtV(post.likes)}</span>
-                      <span className="flex items-center gap-1.5 text-blue-400"><MessageCircle className="size-3" /> {fmtV(post.comments)}</span>
-                      <span className="flex items-center gap-1.5 text-emerald-400"><Share2 className="size-3" /> {fmtV(post.shares)}</span>
-                    </div>
-                  </div>
-                </a>
-              )
-            })}
+          {/* Section header + YouTube format tabs */}
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <h2 className="text-xl font-black text-white border-l-4 pl-4" style={{ borderColor: platformCfg.color, fontFamily: "var(--font-syne)" }}>
+              Latest {platform === "twitter" ? "Tweets" : platform === "facebook" ? "Posts" : "Videos"} · {allPosts.length}
+            </h2>
+            {/* YouTube Shorts tabs */}
+            {isYouTube && (
+              <div className="flex gap-2">
+                {[
+                  { key: "all",   label: `All (${allPosts.length})`,    icon: null },
+                  { key: "short", label: `📱 Shorts (${ytShorts.length})`, icon: null },
+                  { key: "video", label: `🎬 Videos (${ytVideos.length})`,  icon: null },
+                ].map(tab => (
+                  <button
+                    key={tab.key}
+                    onClick={() => setPostFilter(tab.key as any)}
+                    className={`text-xs font-black px-3 py-1.5 rounded-full border transition-all ${
+                      postFilter === tab.key
+                        ? "bg-red-500/20 border-red-500/30 text-red-400"
+                        : "border-white/10 text-muted-foreground/60 hover:bg-white/5"
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* YouTube Shorts stats bar */}
+          {isYouTube && ytShorts.length > 0 && ytVideos.length > 0 && (
+            <div className="grid grid-cols-2 gap-4">
+              <div className="glass-sm border border-red-500/20 rounded-2xl p-4 text-center">
+                <p className="text-[10px] font-black uppercase tracking-widest text-red-400 mb-1">📱 Shorts</p>
+                <p className="text-2xl font-black text-white">{ytShorts.length}</p>
+                <p className="text-xs text-muted-foreground/50">{fmt(ytShorts.reduce((s, p) => s + p.views, 0))} total views</p>
+              </div>
+              <div className="glass-sm border border-violet-500/20 rounded-2xl p-4 text-center">
+                <p className="text-[10px] font-black uppercase tracking-widest text-violet-400 mb-1">🎬 Long-form</p>
+                <p className="text-2xl font-black text-white">{ytVideos.length}</p>
+                <p className="text-xs text-muted-foreground/50">{fmt(ytVideos.reduce((s, p) => s + p.views, 0))} total views</p>
+              </div>
+            </div>
+          )}
+
+          {/* Posts grid */}
+          <div className={`grid gap-4 ${isYouTube && postFilter === "short" ? "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4" : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"}`}>
+            {visiblePosts.map(post => (
+              <PostCard key={post.id} post={post} platform={platform} handle={account.handle} />
+            ))}
           </div>
         </div>
       )}
 
-
-      {/* ── ROI Dinámico de la Cuenta ── */}
+      {/* ── ROI Calculator ── */}
       <div className="flex items-center justify-between mt-4 mb-4">
         <h2 className="text-2xl font-black text-white border-l-4 border-emerald-500 pl-4" style={{ fontFamily: "var(--font-syne)" }}>
           Account Dynamic ROI
@@ -312,64 +418,50 @@ export default function CuentaPage() {
         <div className="absolute bottom-0 right-0 w-96 h-96 bg-emerald-500/10 rounded-full blur-[100px]" />
         <CardContent className="p-5 sm:p-8">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 relative z-10">
-            
             <div className="space-y-6">
               <div>
-                <p className="text-xs font-black uppercase tracking-widest text-muted-foreground/60 mb-2">Vistas Reales · Últimos 30 días</p>
-                <div className="text-4xl font-black text-white">{baseViews > 0 ? fmt(baseViews) : "—"} <span className="text-lg text-emerald-400">/ 30 días</span></div>
-                <p className="text-xs text-muted-foreground/50 mt-1">Suma real de <span className="font-bold text-white/70">play_count</span> de vídeos de los últimos 30 días · vía RapidAPI</p>
+                <p className="text-xs font-black uppercase tracking-widest text-muted-foreground/60 mb-2">Real Views · Last 30 days</p>
+                <div className="text-4xl font-black text-white">{baseViews > 0 ? fmt(baseViews) : "—"} <span className="text-lg text-emerald-400">/ 30d</span></div>
               </div>
-
               <div className="pt-4 border-t border-white/10">
                 <div className="flex justify-between items-end mb-2">
                   <label className="text-xs font-black uppercase tracking-widest text-muted-foreground/60 flex items-center gap-2">
-                    <LineChart className="size-3" /> RPM Local
+                    <LineChart className="size-3" /> Local RPM
                   </label>
                   <span className="text-lg font-black text-white">€{rpmRate.toFixed(2)}</span>
                 </div>
-                <input 
-                  type="range" min="0.05" max="2.00" step="0.05" 
-                  value={rpmRate} onChange={e => setRpmRate(Number(e.target.value))}
-                  className="w-full accent-blue-500"
-                />
+                <input type="range" min="0.05" max="2.00" step="0.05" value={rpmRate}
+                  onChange={e => setRpmRate(Number(e.target.value))} className="w-full accent-blue-500" />
               </div>
-
               <div>
                 <div className="flex justify-between items-end mb-2">
-                  <label className="text-xs font-black uppercase tracking-widest text-muted-foreground/60">Mult. de Nicho (B2B)</label>
+                  <label className="text-xs font-black uppercase tracking-widest text-muted-foreground/60">Niche Multiplier</label>
                   <span className="text-lg font-black text-white">x{sponsorRate.toFixed(1)}</span>
                 </div>
-                <input 
-                  type="range" min="1" max="10" step="0.5" 
-                  value={sponsorRate} onChange={e => setSponsorRate(Number(e.target.value))}
-                  className="w-full accent-violet-500"
-                />
+                <input type="range" min="1" max="10" step="0.5" value={sponsorRate}
+                  onChange={e => setSponsorRate(Number(e.target.value))} className="w-full accent-violet-500" />
               </div>
             </div>
-
             <div className="space-y-4 flex flex-col justify-center">
               <div className="glass border-white/10 rounded-2xl p-5 bg-black/40">
-                <p className="text-[10px] font-black uppercase tracking-widest text-emerald-400 mb-1">Cálculo Fondo Creadores (Mensual)</p>
+                <p className="text-[10px] font-black uppercase tracking-widest text-emerald-400 mb-1">Creator Fund (Monthly Est.)</p>
                 <div className="text-3xl font-black text-white tracking-tighter mb-1">
                   €{monthlyFondo.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                 </div>
-                <p className="text-xs text-emerald-400/50">Cobro orgánico pasivo.</p>
+                <p className="text-xs text-emerald-400/50">Passive organic revenue.</p>
               </div>
-
               <div className="glass border-white/10 rounded-2xl p-5 bg-violet-900/20">
-                <p className="text-[10px] font-black uppercase tracking-widest text-violet-400 mb-1">Cotización Justa por Patrocinio (1 min)</p>
+                <p className="text-[10px] font-black uppercase tracking-widest text-violet-400 mb-1">Fair Sponsorship Rate (1 min)</p>
                 <div className="text-4xl font-black text-white tracking-tighter mb-1">
                   €{sponsorPrice.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                 </div>
-                <p className="text-xs text-violet-400/50">Precio sugerido a cobrarle a las marcas.</p>
+                <p className="text-xs text-violet-400/50">Suggested price to charge brands.</p>
               </div>
             </div>
-
           </div>
         </CardContent>
       </Card>
-      
+
     </div>
   )
 }
-

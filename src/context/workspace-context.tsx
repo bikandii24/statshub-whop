@@ -18,7 +18,11 @@ export interface RecentPost {
   likes: number
   comments: number
   shares: number
-  createTime: number
+  createTime: number          // Unix seconds
+  // Extended fields (optional for backward compat)
+  url?: string                // Direct link to content
+  type?: "short" | "video" | "reel" | "post" | "tweet" | "photo"
+  duration?: number           // seconds (YouTube)
 }
 
 export type SocialPlatform = "tiktok" | "instagram" | "youtube" | "facebook" | "twitter"
