@@ -248,7 +248,8 @@ export default function GestorTikTokPage() {
                     </div>
                     {/* Actions */}
                     <div className="flex gap-1 shrink-0">
-                      {isTikTok && (
+                      {/* Sync button - all platforms except Facebook */}
+                      {platform !== "facebook" && (
                         <button
                           onClick={() => handleSync(account.id)}
                           disabled={!!syncingId}
@@ -296,9 +297,9 @@ export default function GestorTikTokPage() {
                   {/* Footer */}
                   <div className="mt-3 flex items-center justify-between">
                     <span className="text-[10px] text-muted-foreground/40 font-medium">
-                      {isTikTok ? `${t.tiktok_sync} ${timeAgo(account.lastSync)}` : "Manual"}
+                      {platform === "facebook" ? "Manual" : `Synced ${timeAgo(account.lastSync)}`}
                     </span>
-                    {account.views > 0 && (
+                    {(account.views || 0) > 0 && (
                       <span className="flex items-center gap-1 text-[10px] font-bold text-muted-foreground/50">
                         <Eye className="size-3" /> {fmt(account.views)}
                       </span>
