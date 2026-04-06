@@ -31,6 +31,7 @@ export const metadata: Metadata = {
 
 import { AppLayoutClient } from "@/components/app-layout-client";
 import { I18nProvider } from "@/i18n";
+import { CookieBanner } from "@/components/cookie-banner";
 
 export default function RootLayout({
   children,
@@ -52,6 +53,7 @@ export default function RootLayout({
             <AppLayoutClient>
               {children}
             </AppLayoutClient>
+            <CookieBanner />
           </I18nProvider>
         </ThemeProvider>
       </body>
