@@ -1,5 +1,3 @@
-"use client"
-
 import { useT } from "@/i18n"
 import * as React from "react"
 import { useWorkspace } from "@/context/workspace-context"
@@ -44,14 +42,14 @@ function timeAgo(iso: string) {
 function PlatformBadge({ platform }: { platform: SocialPlatform }) {
   const cfg = PLATFORM_CONFIG[platform]
   return (
-    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest border ${cfg.bg} ${cfg.border} ${cfg.color}`}>
+    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest border ${cfg.bg} ${cfg.border} ${cfg.color}`}> 
       <span>{cfg.emoji}</span>{cfg.label}
     </span>
   )
 }
 
 // ── Main Component ────────────────────────────────────────────────────────────
-export default function GestorTikTokPage() {
+export default function AccountsPage() {
   const t = useT()
   const { accounts, activeWorkspace, addAccount, syncAccount, deleteAccount, isLoading, apiConfigured } = useWorkspace()
   const router = useRouter()
@@ -135,7 +133,9 @@ export default function GestorTikTokPage() {
           <h1 className="text-3xl font-black text-white tracking-tight" style={{ fontFamily: "var(--font-syne)" }}>
             {t.tiktok_title}
           </h1>
-          <p className="text-muted-foreground text-sm mt-1">{t.tiktok_subtitle}</p>
+          <p className="text-muted-foreground text-sm mt-1">
+            {t.tiktok_subtitle}
+          </p>
         </div>
         <button
           onClick={() => setShowModal(true)}
@@ -265,7 +265,9 @@ export default function GestorTikTokPage() {
                         <button
                           onClick={e => { e.stopPropagation(); deleteAccount(account.id); setDeleteConfirmId(null) }}
                           className="size-8 flex items-center justify-center rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-all"
-                        >✓</button>
+                        >
+                          ✓
+                        </button>
                       ) : (
                         <button
                           onClick={e => { e.stopPropagation(); setDeleteConfirmId(account.id) }}
@@ -398,8 +400,7 @@ export default function GestorTikTokPage() {
                   </span>
                   {selectedPlatform === "facebook"
                     ? "Stats fetched automatically via Facebook Scraper API"
-                    : `Stats will be fetched automatically from ${PLATFORM_CONFIG[selectedPlatform]?.label ?? selectedPlatform} API`
-                  }
+                    : `Stats will be fetched automatically from ${PLATFORM_CONFIG[selectedPlatform]?.label ?? selectedPlatform} API`}
                 </div>
               </div>
             )}

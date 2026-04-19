@@ -51,7 +51,7 @@ export default function Home() {
   const sections = [
     {
       title: "TikTok Manager",
-      href: "/gestor-tiktok",
+      href: "/accounts",
       description: "Grow your content with automation tools.",
       icon: Video,
       color: "text-pink-400",
@@ -174,7 +174,7 @@ export default function Home() {
         <h2 className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/40 mb-5">{t.dashboard_tools}</h2>
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 animate-stagger">
           {sections.map((section) => (
-            <Link key={section.title} href={section.href} className="group">
+            <Link key={section.title} href="/accounts" className="group">
               <Card className={`glass h-full border-white/[0.07] transition-all duration-500 group-hover:-translate-y-2 group-hover:bg-white/[0.04] ${section.glow}`}>
                 <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-3">
                   <div className={`p-2.5 rounded-xl ${section.bg} ${section.color} border ${section.border} shadow-inner shrink-0`}>

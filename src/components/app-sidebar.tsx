@@ -43,7 +43,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   const navMain = [
     { title: t.nav_dashboard,     url: "/",              icon: LayoutDashboard, color: "text-violet-400", activeColor: "bg-violet-500/15 text-violet-400 border-violet-500/25", hoverColor: "hover:bg-violet-500/5 hover:text-violet-300", glowColor: "rgba(139,92,246,0.8)" },
-    { title: t.nav_tiktok,        url: "/gestor-tiktok", icon: Video,           color: "text-pink-400",   activeColor: "bg-pink-500/15 text-pink-400 border-pink-500/25",       hoverColor: "hover:bg-pink-500/5 hover:text-pink-300",     glowColor: "rgba(236,72,153,0.8)" },
+    { title: t.nav_tiktok,        url: "/accounts", icon: Video,           color: "text-pink-400",   activeColor: "bg-pink-500/15 text-pink-400 border-pink-500/25",       hoverColor: "hover:bg-pink-500/5 hover:text-pink-300",     glowColor: "rgba(236,72,153,0.8)" },
   ]
   const navAnalytics = [
     { title: t.nav_analytics,     url: "/analitica",               icon: BarChart3,  color: "text-blue-400",    activeColor: "bg-blue-500/15 text-blue-400 border-blue-500/25",       hoverColor: "hover:bg-blue-500/5 hover:text-blue-300",     glowColor: "rgba(59,130,246,0.8)" },

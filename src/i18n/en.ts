@@ -4,7 +4,7 @@
 export const en = {
   // ── Sidebar ──
   nav_dashboard: "Dashboard",
-  nav_tiktok: "TikTok Manager",
+  nav_tiktok: "Accounts Manager",
   nav_analytics: "Analytics",
   nav_competition: "Competition",
   nav_news: "News",
@@ -34,15 +34,15 @@ export const en = {
   dashboard_followers: "followers",
 
   // ── TikTok Manager ──
-  tiktok_title: "TikTok Statistics",
-  tiktok_subtitle: "Real metrics for your accounts · on-demand sync.",
-  tiktok_add_account: "Add account",
-  tiktok_manage_accounts: "Manage Accounts",
-  tiktok_manage_desc: "Add TikTok handles to see their real stats.",
+  tiktok_title: "Accounts Manager",
+  tiktok_subtitle: "Manage and view stats for all your social media accounts.",
+  tiktok_add_account: "Add Account",
+  tiktok_manage_accounts: "Accounts Manager",
+  tiktok_manage_desc: "Add, sync, or delete accounts across platforms.",
   tiktok_add: "Add",
-  tiktok_add_first: "Add first account",
-  tiktok_no_accounts: "No connected accounts",
-  tiktok_no_accounts_desc: "Add your TikTok handles to see their real-time stats.",
+  tiktok_add_first: "Add your first account",
+  tiktok_no_accounts: "No accounts linked",
+  tiktok_no_accounts_desc: "No accounts linked yet. Add one above.",
   tiktok_api_required: "API configuration required",
   tiktok_connected: "Connected accounts",
   tiktok_total_audience: "Total Audience",
