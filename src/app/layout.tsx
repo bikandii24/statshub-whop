@@ -35,19 +35,29 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const hasWhopAppId = !!process.env.NEXT_PUBLIC_WHOP_APP_ID;
+
   return (
     <html lang="en" suppressHydrationWarning>
       <body
         className={`${inter.variable} ${syne.variable} ${geistMono.variable} font-sans antialiased`}
       >
         {/* WhopApp syncs theme (light/dark) from host Whop page automatically */}
-        <WhopApp>
+        {hasWhopAppId ? (
+          <WhopApp>
+            <I18nProvider>
+              <AppLayoutClient>
+                {children}
+              </AppLayoutClient>
+            </I18nProvider>
+          </WhopApp>
+        ) : (
           <I18nProvider>
             <AppLayoutClient>
               {children}
             </AppLayoutClient>
           </I18nProvider>
-        </WhopApp>
+        )}
       </body>
     </html>
   );
