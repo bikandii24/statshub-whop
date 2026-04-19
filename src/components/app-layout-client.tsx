@@ -9,16 +9,9 @@ import { WorkspaceProvider, useWorkspace } from "@/context/workspace-context"
 import { BarChart3, Loader2, Bell, BellRing, CheckCircle2, AlertCircle } from "lucide-react"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 
-// Inner guard — redirects to access-required if not authenticated
+// Inner guard — allows access without authentication (public mode)
 function AuthGuard({ children }: { children: React.ReactNode }) {
-  const { user, isAuthLoading } = useWorkspace()
-  const router = useRouter()
-
-  React.useEffect(() => {
-    if (!isAuthLoading && !user) {
-      router.push("/access-required")
-    }
-  }, [isAuthLoading, user, router])
+  const { isAuthLoading } = useWorkspace()
 
   if (isAuthLoading) {
     return (
@@ -29,10 +22,6 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
         <Loader2 className="size-5 animate-spin text-muted-foreground/40" />
       </div>
     )
-  }
-
-  if (!user) {
-    return null // Will redirect
   }
 
   return <>{children}</>

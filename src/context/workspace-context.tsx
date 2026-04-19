@@ -103,9 +103,23 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       .then(r => r.json())
       .then(d => {
         if (d.user) setUser(d.user)
+        // Public mode: always set a user even if not authenticated
+        if (!d.user) {
+          setUser({
+            id: 'guest-user',
+            email: 'guest@statshub.app',
+            name: 'Guest'
+          })
+        }
         setIsAuthLoading(false)
       })
       .catch(() => {
+        // Public mode: set guest user on error too
+        setUser({
+          id: 'guest-user',
+          email: 'guest@statshub.app',
+          name: 'Guest'
+        })
         setIsAuthLoading(false)
       })
   }, [])
