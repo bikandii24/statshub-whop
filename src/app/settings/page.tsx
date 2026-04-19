@@ -158,7 +158,7 @@ export default function ConfiguracionPage() {
 
           {/* Link */}
           <a
-            href="/privacidad"
+            href="/privacy"
             className="flex items-center gap-2 text-xs font-bold text-violet-400 hover:text-violet-300 transition-colors"
           >
             <Shield className="size-3" /> View Privacy Policy ↗

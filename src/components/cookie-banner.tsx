@@ -63,7 +63,7 @@ export function CookieBanner() {
             <p className="text-sm font-black text-white mb-1">{t.title}</p>
             <p className="text-[11px] text-muted-foreground/60 leading-snug">
               {t.body}{" "}
-              <Link href="/privacidad" className="text-violet-400 hover:text-violet-300 underline">
+              <Link href="/privacy" className="text-violet-400 hover:text-violet-300 underline">
                 {t.link}
               </Link>
             </p>

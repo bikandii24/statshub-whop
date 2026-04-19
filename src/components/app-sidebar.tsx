@@ -299,7 +299,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <SidebarMenuButton
               className="h-11 rounded-xl hover:bg-white/5 transition-all group border border-transparent"
               render={
-                <Link href="/configuracion" className="flex items-center gap-3 w-full">
+                <Link href="/settings" className="flex items-center gap-3 w-full">
                   <Settings className="size-4.5 text-muted-foreground/50 group-hover:rotate-90 transition-transform duration-500" />
                   <span className="font-semibold text-sm text-muted-foreground/60 group-hover:text-white transition-colors tracking-tight">
                     {t.nav_settings}

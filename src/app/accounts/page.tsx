@@ -224,7 +224,7 @@ export default function AccountsPage() {
             const isTikTok = platform === "tiktok"
             return (
               <Card key={account.id}
-                onClick={() => router.push(`/cuenta/${account.id}`)}
+                onClick={() => router.push(`/account/${account.id}`)}
                 className={`glass border-white/[0.07] hover:-translate-y-1 transition-all duration-300 overflow-hidden group cursor-pointer`}
                 style={{ boxShadow: `0 0 0 0 transparent` }}
                 onMouseEnter={e => (e.currentTarget.style.boxShadow = `0 0 30px -10px ${cfg.glow}`)}
