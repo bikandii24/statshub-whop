@@ -13,10 +13,6 @@ import { enUS } from "date-fns/locale"
 // ── Platform config ───────────────────────────────────────────────────────────
 const PLATFORM_CONFIG: Record<SocialPlatform, { emoji: string; color: string; name: string }> = {
   tiktok:    { emoji: "🎵", color: "#EC4899", name: "TikTok" },
-  instagram: { emoji: "📸", color: "#F43F5E", name: "Instagram" },
-  youtube:   { emoji: "▶️", color: "#EF4444", name: "YouTube" },
-  facebook:  { emoji: "👥", color: "#3B82F6", name: "Facebook" },
-  twitter:   { emoji: "𝕏",  color: "#38BDF8", name: "X (Twitter)" },
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -267,13 +263,7 @@ export default function CuentaPage() {
 
   // ── Post filtering ──
   const allPosts = account.recentPosts ?? []
-  const isYouTube = platform === "youtube"
-  const ytShorts  = isYouTube ? allPosts.filter(p => p.type === "short") : []
-  const ytVideos  = isYouTube ? allPosts.filter(p => p.type !== "short") : []
-
-  const visiblePosts = isYouTube
-    ? (postFilter === "short" ? ytShorts : postFilter === "video" ? ytVideos : allPosts)
-    : allPosts
+  const visiblePosts = allPosts
 
   const monthlyFondo  = (baseViews / 1000) * rpmRate
   const sponsorPrice  = monthlyFondo * sponsorRate
@@ -348,53 +338,15 @@ export default function CuentaPage() {
       {/* ── Posts Section ── */}
       {allPosts.length > 0 && (
         <div className="space-y-4">
-          {/* Section header + YouTube format tabs */}
+          {/* Section header */}
           <div className="flex items-center justify-between flex-wrap gap-3">
             <h2 className="text-xl font-black text-white border-l-4 pl-4" style={{ borderColor: platformCfg.color, fontFamily: "var(--font-syne)" }}>
-              Latest {platform === "twitter" ? "Tweets" : platform === "facebook" ? "Posts" : "Videos"} · {allPosts.length}
+              Latest Videos · {allPosts.length}
             </h2>
-            {/* YouTube Shorts tabs */}
-            {isYouTube && (
-              <div className="flex gap-2">
-                {[
-                  { key: "all",   label: `All (${allPosts.length})`,    icon: null },
-                  { key: "short", label: `📱 Shorts (${ytShorts.length})`, icon: null },
-                  { key: "video", label: `🎬 Videos (${ytVideos.length})`,  icon: null },
-                ].map(tab => (
-                  <button
-                    key={tab.key}
-                    onClick={() => setPostFilter(tab.key as any)}
-                    className={`text-xs font-black px-3 py-1.5 rounded-full border transition-all ${
-                      postFilter === tab.key
-                        ? "bg-red-500/20 border-red-500/30 text-red-400"
-                        : "border-white/10 text-muted-foreground/60 hover:bg-white/5"
-                    }`}
-                  >
-                    {tab.label}
-                  </button>
-                ))}
-              </div>
-            )}
           </div>
 
-          {/* YouTube Shorts stats bar */}
-          {isYouTube && ytShorts.length > 0 && ytVideos.length > 0 && (
-            <div className="grid grid-cols-2 gap-4">
-              <div className="glass-sm border border-red-500/20 rounded-2xl p-4 text-center">
-                <p className="text-[10px] font-black uppercase tracking-widest text-red-400 mb-1">📱 Shorts</p>
-                <p className="text-2xl font-black text-white">{ytShorts.length}</p>
-                <p className="text-xs text-muted-foreground/50">{fmt(ytShorts.reduce((s, p) => s + p.views, 0))} total views</p>
-              </div>
-              <div className="glass-sm border border-violet-500/20 rounded-2xl p-4 text-center">
-                <p className="text-[10px] font-black uppercase tracking-widest text-violet-400 mb-1">🎬 Long-form</p>
-                <p className="text-2xl font-black text-white">{ytVideos.length}</p>
-                <p className="text-xs text-muted-foreground/50">{fmt(ytVideos.reduce((s, p) => s + p.views, 0))} total views</p>
-              </div>
-            </div>
-          )}
-
           {/* Posts grid */}
-          <div className={`grid gap-4 ${isYouTube && postFilter === "short" ? "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4" : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"}`}>
+          <div className={`grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3`}>
             {visiblePosts.map(post => (
               <PostCard key={post.id} post={post} platform={platform} handle={account.handle} />
             ))}

@@ -18,10 +18,6 @@ const PLATFORM_CONFIG: Record<SocialPlatform, {
   label: string; emoji: string; color: string; bg: string; border: string; glow: string; placeholder: string
 }> = {
   tiktok:    { label: "TikTok",      emoji: "🎵", color: "text-pink-400",    bg: "bg-pink-500/10",    border: "border-pink-500/20",    glow: "rgba(236,72,153,0.8)",   placeholder: "username" },
-  instagram: { label: "Instagram",   emoji: "📸", color: "text-rose-400",    bg: "bg-rose-500/10",    border: "border-rose-500/20",    glow: "rgba(251,113,133,0.8)",  placeholder: "username" },
-  youtube:   { label: "YouTube",     emoji: "▶️", color: "text-red-400",     bg: "bg-red-500/10",     border: "border-red-500/20",     glow: "rgba(248,113,113,0.8)",  placeholder: "channel or @handle" },
-  facebook:  { label: "Facebook",    emoji: "👥", color: "text-blue-400",    bg: "bg-blue-500/10",    border: "border-blue-500/20",    glow: "rgba(96,165,250,0.8)",   placeholder: "page-slug or full URL" },
-  twitter:   { label: "X (Twitter)", emoji: "𝕏",  color: "text-sky-400",     bg: "bg-sky-500/10",     border: "border-sky-500/20",     glow: "rgba(56,189,248,0.8)",   placeholder: "username" },
 }
 const PLATFORMS = Object.keys(PLATFORM_CONFIG) as SocialPlatform[]
 
@@ -367,12 +363,10 @@ export default function AccountsPage() {
             {/* Step 2: Handle */}
             <div className="mb-4">
               <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/50 mb-2 block">
-                {selectedPlatform === "facebook" ? "Page URL or Slug" : "Handle / Username"}
+                Handle / Username
               </label>
               <div className="flex items-center gap-2 glass-sm border border-white/10 rounded-xl px-4 py-3 focus-within:border-pink-500/40">
-                {selectedPlatform !== "facebook" && (
-                  <span className="text-muted-foreground/50 font-bold">@</span>
-                )}
+                <span className="text-muted-foreground/50 font-bold">@</span>
                 <input
                   autoFocus
                   value={handle}
@@ -382,30 +376,7 @@ export default function AccountsPage() {
                   className="flex-1 bg-transparent text-white font-bold text-sm outline-none placeholder:text-muted-foreground/30"
                 />
               </div>
-              {selectedPlatform === "facebook" && (
-                <p className="text-[10px] text-muted-foreground/40 mt-1.5">
-                  e.g. <span className="text-muted-foreground/60 font-mono">coca-cola</span> or <span className="text-muted-foreground/60 font-mono">facebook.com/coca-cola</span>
-                </p>
-              )}
             </div>
-
-            {/* Auto-sync info — replaces manual stats form */}
-            {selectedPlatform !== "tiktok" && (
-              <div className="mb-4">
-                <div className={`flex items-center gap-2 rounded-xl px-3 py-2.5 border text-xs font-bold ${
-                  selectedPlatform === "facebook"
-                    ? "bg-blue-500/10 border-blue-500/20 text-blue-400"
-                    : "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
-                }`}>
-                  <span className="text-base leading-none">
-                    {selectedPlatform === "facebook" ? "👥" : selectedPlatform === "instagram" ? "📸" : selectedPlatform === "youtube" ? "▶️" : "𝕏"}
-                  </span>
-                  {selectedPlatform === "facebook"
-                    ? "Stats fetched automatically via Facebook Scraper API"
-                    : `Stats will be fetched automatically from ${PLATFORM_CONFIG[selectedPlatform]?.label ?? selectedPlatform} API`}
-                </div>
-              </div>
-            )}
 
             {addError && (
               <p className="text-xs text-red-400 font-medium mb-3 bg-red-500/10 border border-red-500/20 rounded-xl px-3 py-2">{addError}</p>

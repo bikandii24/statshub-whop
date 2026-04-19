@@ -1,7 +1,6 @@
 export const dynamic = "force-dynamic"
 import { NextRequest, NextResponse } from 'next/server'
 import { fetchTikTokStats } from '@/lib/tiktok'
-import { fetchInstagramStats, fetchTwitterStats, fetchYouTubeStats, fetchFacebookStats } from '@/lib/social-apis'
 import { getWhopUser } from '@/lib/whop'
 import { readDB, writeDB, readSettings } from '@/lib/storage'
 import { checkRateLimit } from '@/lib/rate-limit'
@@ -119,86 +118,35 @@ export async function POST(req: NextRequest) {
 
       let newAccount: any
 
-      if (platform === 'tiktok') {
-        // Rate limit TikTok scrapes: 5/hour per user (protects API credits)
-        const scrapeLimit = checkRateLimit(`scrape:${user.id}`, 5, 60 * 60 * 1000)
-        if (!scrapeLimit.allowed) {
-          return NextResponse.json({ error: 'TikTok query limit reached. Wait 1 hour.' }, { status: 429 })
-        }
-        const result = await fetchTikTokStats(payload.handle)
-        if (!result.success) return NextResponse.json({ error: result.error }, { status: 422 })
-        const stats = result.data!
-        newAccount = {
-          id: `acc-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-          handle: stats.handle,
-          workspaceId: payload.workspaceId,
-          platform: 'tiktok',
-          followers: stats.followers,
-          following: stats.following,
-          likes: stats.likes,
-          posts: stats.posts,
-          views: stats.views,
-          viewsIsReal: stats.viewsIsReal,
-          engagement: stats.engagement,
-          avatar: stats.avatar,
-          bio: stats.bio,
-          verified: stats.verified,
-          lastSync: stats.lastSync,
-          recentPosts: stats.recentPosts ?? [],
-        }
-      } else {
-        // Non-TikTok: use platform-specific API or fall back to manual
-        const apiResult = await (async () => {
-          if (platform === 'instagram') return fetchInstagramStats(normalizedHandle)
-          if (platform === 'twitter')   return fetchTwitterStats(normalizedHandle)
-          if (platform === 'youtube')   return fetchYouTubeStats(normalizedHandle)
-          if (platform === 'facebook')  return fetchFacebookStats(normalizedHandle)
-          return { success: false, error: 'Unknown platform' }
-        })()
-
-        const md = payload.manualData ?? {}
-        if (apiResult.success && (apiResult as any).data) {
-          const d = (apiResult as any).data
-          newAccount = {
-            id: `acc-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-            handle: d.handle ?? normalizedHandle,
-            workspaceId: payload.workspaceId,
-            platform,
-            followers: d.followers ?? 0,
-            following: d.following ?? 0,
-            likes: 0,
-            posts: d.posts ?? 0,
-            views: d.views ?? 0,
-            viewsIsReal: true,
-            engagement: d.engagement ?? 0,
-            avatar: d.avatar ?? '',
-            bio: d.bio ?? '',
-            verified: d.verified ?? false,
-            lastSync: d.lastSync ?? new Date().toISOString(),
-            recentPosts: [],
-          }
-        } else {
-          // API unavailable or failed — use manual data
-          newAccount = {
-            id: `acc-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-            handle: normalizedHandle,
-            workspaceId: payload.workspaceId,
-            platform,
-            followers: md.followers ?? 0,
-            following: 0,
-            likes: 0,
-            posts: md.posts ?? 0,
-            views: md.views ?? 0,
-            viewsIsReal: false,
-            engagement: md.engagement ?? 0,
-            avatar: '',
-            bio: '',
-            verified: false,
-            lastSync: new Date().toISOString(),
-            recentPosts: [],
-            apiError: !apiResult.success ? apiResult.error : undefined,
-          }
-        }
+      if (platform !== 'tiktok') {
+        return NextResponse.json({ error: 'Only TikTok is supported' }, { status: 400 })
+      }
+      
+      // Rate limit TikTok scrapes: 5/hour per user (protects API credits)
+      const scrapeLimit = checkRateLimit(`scrape:${user.id}`, 5, 60 * 60 * 1000)
+      if (!scrapeLimit.allowed) {
+        return NextResponse.json({ error: 'TikTok query limit reached. Wait 1 hour.' }, { status: 429 })
+      }
+      const result = await fetchTikTokStats(payload.handle)
+      if (!result.success) return NextResponse.json({ error: result.error }, { status: 422 })
+      const stats = result.data!
+      newAccount = {
+        id: `acc-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        handle: stats.handle,
+        workspaceId: payload.workspaceId,
+        platform: 'tiktok',
+        followers: stats.followers,
+        following: stats.following,
+        likes: stats.likes,
+        posts: stats.posts,
+        views: stats.views,
+        viewsIsReal: stats.viewsIsReal,
+        engagement: stats.engagement,
+        avatar: stats.avatar,
+        bio: stats.bio,
+        verified: stats.verified,
+        lastSync: stats.lastSync,
+        recentPosts: stats.recentPosts ?? [],
       }
 
       // Re-read AGAIN after any async op to get latest state
@@ -222,37 +170,17 @@ export async function POST(req: NextRequest) {
 
       const platform = account.platform ?? 'tiktok'
 
-      if (platform === 'tiktok') {
-        const result = await fetchTikTokStats(account.handle)
-        if (!result.success) return NextResponse.json({ error: result.error }, { status: 422 })
-        Object.assign(account, {
-          ...result.data!,
-          recentPosts: result.data!.recentPosts ?? account.recentPosts ?? [],
-          platform: 'tiktok',
-        })
-      } else {
-        // Platform-specific fetch
-        const result = await (async () => {
-          if (platform === 'instagram') return fetchInstagramStats(account.handle)
-          if (platform === 'twitter')   return fetchTwitterStats(account.handle)
-          if (platform === 'youtube')   return fetchYouTubeStats(account.handle)
-          if (platform === 'facebook')  return fetchFacebookStats(account.handle)
-          return { success: false, error: 'Unknown platform' }
-        })()
-        if (!result.success) return NextResponse.json({ error: result.error }, { status: 422 })
-        const d = (result as any).data!
-        Object.assign(account, {
-          followers:  d.followers  ?? account.followers,
-          following:  d.following  ?? account.following,
-          posts:      d.posts      ?? account.posts,
-          views:      d.views      ?? account.views ?? 0,
-          avatar:     d.avatar     || account.avatar,
-          bio:        d.bio        || account.bio,
-          verified:   d.verified   ?? account.verified,
-          lastSync:   d.lastSync,
-          platform,
-        })
+      if (platform !== 'tiktok') {
+        return NextResponse.json({ error: 'Only TikTok is supported' }, { status: 400 })
       }
+      
+      const result = await fetchTikTokStats(account.handle)
+      if (!result.success) return NextResponse.json({ error: result.error }, { status: 422 })
+      Object.assign(account, {
+        ...result.data!,
+        recentPosts: result.data!.recentPosts ?? account.recentPosts ?? [],
+        platform: 'tiktok',
+      })
       db.accounts[user.id] = accounts
       // Save snapshot for history — includes views now
       if (!db.snapshots) (db as any).snapshots = {}

@@ -24,7 +24,7 @@ export interface RecentPost {
   duration?: number           // seconds (YouTube)
 }
 
-export type SocialPlatform = "tiktok" | "instagram" | "youtube" | "facebook" | "twitter"
+export type SocialPlatform = "tiktok"
 
 export interface Account {
   id: string
