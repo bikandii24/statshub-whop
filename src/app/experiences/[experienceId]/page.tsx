@@ -31,7 +31,7 @@ function AccessDenied() {
         <Lock className="size-7 text-white" />
       </div>
       <div className="text-center">
-        <h1 className="text-xl font-black text-white mb-2" style={{ fontFamily: "var(--font-syne)" }>
+        <h1 className="text-xl font-black text-white mb-2" style={{ fontFamily: "var(--font-syne)" }}>
           Access Required
         </h1>
         <p className="text-sm text-muted-foreground max-w-sm">
