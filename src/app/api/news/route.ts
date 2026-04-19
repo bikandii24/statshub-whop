@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+export const dynamic = 'force-dynamic'
+
 // ── Sources (English) ────────────────────────────────────
 const SOURCES = [
   { url: 'https://techcrunch.com/feed/', name: 'TechCrunch', lang: 'en' },
@@ -133,8 +135,14 @@ async function fetchAllNews(): Promise<any[]> {
 export async function GET(_req: NextRequest) {
   try {
     const news = await fetchAllNews()
-    return NextResponse.json({ news, cachedAt: cache?.at ?? Date.now() })
+    return NextResponse.json(
+      { news, cachedAt: cache?.at ?? Date.now() },
+      { headers: { 'Cache-Control': 'no-store, max-age=0' } }
+    )
   } catch (err: any) {
-    return NextResponse.json({ error: err.message, news: [] }, { status: 500 })
+    return NextResponse.json(
+      { error: err.message, news: [] },
+      { status: 500, headers: { 'Cache-Control': 'no-store, max-age=0' } }
+    )
   }
 }

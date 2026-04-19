@@ -56,7 +56,7 @@ export default function NoticiasPage() {
   const fetchNews = async () => {
     setLoading(true); setError(null)
     try {
-      const res = await fetch("/api/news")
+      const res = await fetch(`/api/news?t=${Date.now()}`, { cache: 'no-store' })
       const data = await res.json()
       if (!res.ok) { setError(data.error); return }
       setNews(data.news ?? [])
