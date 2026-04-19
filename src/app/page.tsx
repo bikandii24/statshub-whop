@@ -132,7 +132,7 @@ export default function Home() {
             </div>
 
             <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-              <Link href="/gestor-tiktok" className="w-full sm:w-auto">
+              <Link href="/accounts" className="w-full sm:w-auto">
                 <Button className="font-bold h-11 px-7 rounded-full shadow-xl shadow-violet-500/25 hover:scale-105 active:scale-95 transition-all bg-violet-600 hover:bg-violet-500 text-white w-full">
                   <Zap className="size-4 mr-2" fill="white" /> {t.dashboard_manage}
                 </Button>
