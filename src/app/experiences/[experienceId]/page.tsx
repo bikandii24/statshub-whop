@@ -5,7 +5,7 @@
 
 import { headers } from "next/headers"
 import { redirect } from "next/navigation"
-import { whopsdk } from "@/lib/whop"
+import { getWhopSdk } from "@/lib/whop"
 import { BarChart3, Loader2 } from "lucide-react"
 
 export default async function ExperiencePage({
@@ -17,15 +17,18 @@ export default async function ExperiencePage({
   const hdrs = await headers()
 
   try {
+    const sdk = getWhopSdk();
+    if (!sdk) throw new Error("SDK init failed");
+
     // Verify user via native Whop token (injected in x-whop-user-token header)
-    const { userId } = await whopsdk.verifyUserToken(hdrs)
+    const { userId } = await sdk.verifyUserToken(hdrs)
 
     // Fetch experience to get company context (for multi-tenant data isolation)
-    const experience = await whopsdk.experiences.retrieve(experienceId)
+    const experience = await sdk.experiences.retrieve(experienceId)
     const companyId = experience.company.id
 
     // Check user has access to this experience
-    await whopsdk.users.checkAccess(experienceId, { id: userId })
+    await sdk.users.checkAccess(experienceId, { id: userId })
 
     // Redirect to main dashboard — session is now established via Whop headers
     redirect("/")
