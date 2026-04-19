@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { verifyToken } from '@/lib/auth'
+import { getWhopUser } from '@/lib/whop'
 import { readSettings } from '@/lib/storage'
 
 export async function GET(req: NextRequest) {
   // Auth check
-  const token = req.cookies.get('sh_token')?.value
-  if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  const user = verifyToken(token)
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const user = await getWhopUser(req.headers)
+  if (!user && process.env.NODE_ENV !== 'development') return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { searchParams } = new URL(req.url)
   const handle = searchParams.get('handle') || 'gymotivation73'

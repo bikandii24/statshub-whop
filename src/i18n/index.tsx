@@ -14,21 +14,11 @@ interface I18nContextValue {
 const I18nContext = React.createContext<I18nContextValue>({ lang: "en", t: en })
 
 export function I18nProvider({ children }: { children: React.ReactNode }) {
-  const [lang, setLang] = React.useState<Lang>("en")
-
-  React.useEffect(() => {
-    // Check browser/navigator language
-    const browserLang =
-      (typeof navigator !== "undefined" &&
-        (navigator.language || (navigator.languages && navigator.languages[0]))) ||
-      "en"
-    setLang(browserLang.toLowerCase().startsWith("es") ? "es" : "en")
-  }, [])
-
-  const t = lang === "es" ? es : en
+  // Whop App Store requires English-only UI
+  const t = en
 
   return (
-    <I18nContext.Provider value={{ lang, t }}>
+    <I18nContext.Provider value={{ lang: "en", t }}>
       {children}
     </I18nContext.Provider>
   )

@@ -2,14 +2,14 @@
 
 import { useT } from "@/i18n"
 import * as React from "react"
-import { Settings, User, Bell, LogOut, Info, Shield, Check } from "lucide-react"
+import { Settings, User, Bell, Info, Shield, Check } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { useWorkspace } from "@/context/workspace-context"
 
 export default function ConfiguracionPage() {
   const t = useT()
-  const { user, accounts, workspaces, logout } = useWorkspace()
+  const { user, accounts, workspaces } = useWorkspace()
   const totalAccounts = accounts.length
   const totalWorkspaces = workspaces.length
 
@@ -166,16 +166,6 @@ export default function ConfiguracionPage() {
         </CardContent>
       </Card>
 
-      {/* Sign out */}
-      <div className="pt-2">
-        <Button
-          onClick={logout}
-          variant="outline"
-          className="w-full rounded-xl h-11 font-bold border-red-500/20 text-red-400 hover:bg-red-500/10 hover:border-red-500/40 transition-all"
-        >
-          <LogOut className="size-4 mr-2" /> Sign Out
-        </Button>
-      </div>
     </div>
   )
 }

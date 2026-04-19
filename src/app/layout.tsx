@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Syne, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { ThemeProvider } from "@/components/theme-provider";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/app-sidebar";
+import { WhopApp } from "@whop/react/components";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -25,13 +23,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Stats Hub — TikTok Analytics",
-  description: "Real-time TikTok analytics. Manage and analyze all your accounts in one place.",
+  title: "Stats Hub — Social Media Analytics",
+  description: "Real-time social media analytics. Manage and analyze all your accounts in one place.",
 };
 
 import { AppLayoutClient } from "@/components/app-layout-client";
 import { I18nProvider } from "@/i18n";
-import { CookieBanner } from "@/components/cookie-banner";
 
 export default function RootLayout({
   children,
@@ -43,19 +40,14 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${syne.variable} ${geistMono.variable} font-sans antialiased`}
       >
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="dark"
-          enableSystem={false}
-          disableTransitionOnChange
-        >
+        {/* WhopApp syncs theme (light/dark) from host Whop page automatically */}
+        <WhopApp>
           <I18nProvider>
             <AppLayoutClient>
               {children}
             </AppLayoutClient>
-            <CookieBanner />
           </I18nProvider>
-        </ThemeProvider>
+        </WhopApp>
       </body>
     </html>
   );

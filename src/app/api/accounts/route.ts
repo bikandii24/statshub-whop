@@ -1,26 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { fetchTikTokStats } from '@/lib/tiktok'
 import { fetchInstagramStats, fetchTwitterStats, fetchYouTubeStats, fetchFacebookStats } from '@/lib/social-apis'
-import { verifyToken } from '@/lib/auth'
+import { getWhopUser } from '@/lib/whop'
 import { readDB, writeDB, readSettings } from '@/lib/storage'
-import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
-import { sanitizeHandle, isValidHandle, isValidPlatform, looksLikeAttack, sanitizeString } from '@/lib/sanitize'
+import { checkRateLimit } from '@/lib/rate-limit'
+import { sanitizeHandle, isValidHandle, isValidPlatform, looksLikeAttack } from '@/lib/sanitize'
 
-// ── Auth from cookie (Whop version: accepts whop_bid as fallback) ─────────
-function getUserFromRequest(req: NextRequest) {
-  // Try JWT token first
-  const token = req.cookies.get('sh_token')?.value
-  if (token) {
-    const user = verifyToken(token)
-    if (user) return user
-  }
-  // Fallback: use whop_bid cookie (set by auto-session in /api/auth)
-  const browserId = req.cookies.get('whop_bid')?.value
-  if (browserId) {
+// ── Auth via Whop native token ─────────────────────────────────────────────
+async function getUserFromRequest(req: NextRequest) {
+  const user = await getWhopUser(req.headers)
+  if (user) return user
+
+  // Dev fallback (local development without Whop iframe)
+  if (process.env.NODE_ENV === 'development') {
     return {
-      id: `whop-${browserId}`,
-      email: `user-${browserId.slice(0, 6)}@statshub.whop`,
-      name: 'Whop Member',
+      id: 'dev-local-user',
+      email: 'dev@statshub.app',
+      name: 'Dev User',
     }
   }
   return null
@@ -28,7 +24,7 @@ function getUserFromRequest(req: NextRequest) {
 
 function getDefaultWorkspaces() {
   return [
-    { id: 'ws-main', name: 'Mi Espacio', icon: 'Zap', color: 'text-violet-400' },
+    { id: 'ws-main', name: 'My Workspace', icon: 'Zap', color: 'text-violet-400' },
   ]
 }
 
@@ -44,7 +40,7 @@ async function getUserData(userId: string) {
 // ── GET ──────────────────────────────────────────────────────────────────
 export async function GET(req: NextRequest) {
   try {
-    const user = getUserFromRequest(req)
+    const user = await getUserFromRequest(req)
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const { db, workspaces, accounts } = await getUserData(user.id)
@@ -73,13 +69,13 @@ export async function GET(req: NextRequest) {
 // ── POST ─────────────────────────────────────────────────────────────────
 export async function POST(req: NextRequest) {
   try {
-    const user = getUserFromRequest(req)
+    const user = await getUserFromRequest(req)
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     // Rate limit: 30 API calls/min per user
     const generalLimit = checkRateLimit(`accounts:${user.id}`, 30, 60 * 1000)
     if (!generalLimit.allowed) {
-      return NextResponse.json({ error: 'Demasiadas peticiones. Espera un momento.' }, { status: 429 })
+      return NextResponse.json({ error: 'Too many requests. Please wait a moment.' }, { status: 429 })
     }
 
     const { action, payload } = await req.json()

@@ -1,30 +1,28 @@
 import { NextRequest, NextResponse } from "next/server"
-import { verifyToken } from "@/lib/auth"
+import { getWhopUser } from "@/lib/whop"
 import { checkRateLimit } from "@/lib/rate-limit"
 
 export async function POST(req: NextRequest) {
   try {
-    const token = req.cookies.get('sh_token')?.value
-    if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    const user = verifyToken(token)
+    const user = await getWhopUser(req.headers) ?? (process.env.NODE_ENV === 'development' ? { id: 'dev-local-user' } : null)
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const rateLimit = checkRateLimit(`ai:${user.id}`, 10, 60 * 1000)
     if (!rateLimit.allowed) {
-      return NextResponse.json({ error: "Demasiadas peticiones. Espera un momento." }, { status: 429 })
+      return NextResponse.json({ error: "Too many requests. Please wait a moment." }, { status: 429 })
     }
 
     const { handle, niche, engagement } = await req.json()
 
-    const prompt = `Actúa como un experto estratega de contenido de TikTok. 
-El usuario '${handle}' está en el nicho de '${niche || "contenido general"}'. 
-Su engagement actual es del ${engagement || "0"}%.
-Genera EXACTAMENTE 3 ideas de vídeos virales tipo "Top 3", "Dato curioso" o "Tutorial".
-Para cada idea da un TÍTULO (el gancho) y un BREVE GUION de 1 frase.
-Formato estricto:
-1. [Título]: [Guion]
-2. [Título]: [Guion]
-3. [Título]: [Guion]`
+    const prompt = `You are an expert TikTok content strategist.
+The user '${handle}' is in the '${niche || "general content"}' niche.
+Their current engagement rate is ${engagement || "0"}%.
+Generate EXACTLY 3 viral video ideas (e.g. "Top 3", "Fun fact", "Tutorial").
+For each idea provide a TITLE (the hook) and a BRIEF SCRIPT of 1 sentence.
+Strict format:
+1. [Title]: [Script]
+2. [Title]: [Script]
+3. [Title]: [Script]`
 
     // ── 1. Try Groq API (free, production-ready, runs Llama) ─────────────
     const groqKey = process.env.GROQ_API_KEY
@@ -88,19 +86,19 @@ Formato estricto:
     }
 
     // ── 3. Heuristic fallback ─────────────────────────────────────────────
-    const nicheLabel = niche || "tu sector"
+    const nicheLabel = niche || "your niche"
     const mockIdeas = [
       {
-        title: `El secreto que nadie te cuenta de ${nicheLabel}`,
-        script: "Comienza con un gancho misterioso y revela un tip accionable en los primeros 3 segundos."
+        title: `The secret nobody tells you about ${nicheLabel}`,
+        script: "Start with a mysterious hook and reveal an actionable tip in the first 3 seconds."
       },
       {
-        title: `Por qué el 90% falla en ${nicheLabel} (y cómo evitarlo)`,
-        script: "Lista de 3 errores comunes visuales. Usa texto grande en pantalla y ritmo rápido."
+        title: `Why 90% fail at ${nicheLabel} (and how to avoid it)`,
+        script: "List 3 common visual mistakes. Use large on-screen text and fast pacing."
       },
       {
-        title: `Tutorial rápido de ${nicheLabel}: consigue [objetivo] en 60 segundos 🚀`,
-        script: "Formato pasito a pasito (Step 1, Step 2...) con pantalla verde o voiceover directo."
+        title: `Quick ${nicheLabel} tutorial: achieve [goal] in 60 seconds 🚀`,
+        script: "Step-by-step format (Step 1, Step 2...) with green screen or direct voiceover."
       }
     ]
 
@@ -130,6 +128,6 @@ function parseIdeas(text: string) {
   return numbered.slice(0, 3).map(l => {
     const clean = l.replace(/^\d+\.\s*/, '')
     const [title, ...rest] = clean.split(':')
-    return { title: title?.trim() || clean, script: rest.join(':').trim() || 'Usa un gancho visual potente en los primeros 3 segundos.' }
+    return { title: title?.trim() || clean, script: rest.join(':').trim() || 'Use a powerful visual hook in the first 3 seconds.' }
   })
 }

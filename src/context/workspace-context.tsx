@@ -1,7 +1,6 @@
 "use client"
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react"
-import { useRouter } from "next/navigation"
 
 export interface Workspace {
   id: string
@@ -65,7 +64,6 @@ interface WorkspaceContextType {
   // Auth
   user: AuthUser | null
   isAuthLoading: boolean
-  logout: () => Promise<void>
   // Data
   workspaces: Workspace[]
   accounts: Account[]
@@ -87,31 +85,27 @@ interface WorkspaceContextType {
 const WorkspaceContext = createContext<WorkspaceContextType | undefined>(undefined)
 
 export function WorkspaceProvider({ children }: { children: ReactNode }) {
-  const router = useRouter()
   const [user, setUser] = useState<AuthUser | null>(null)
   const [isAuthLoading, setIsAuthLoading] = useState(true)
   const [workspaces, setWorkspaces] = useState<Workspace[]>([])
   const [accounts, setAccounts] = useState<Account[]>([])
   const [snapshots, setSnapshots] = useState<Record<string, any[]>>({})
   const [notifications, setNotifications] = useState<NotificationItem[]>([
-    { id: "mock-1", title: "¡Bienvenido a Stats Hub!", message: "Conecta tu primera cuenta para empezar el tracking.", type: "info", read: false, timestamp: new Date().toISOString() }
+    { id: "mock-1", title: "Welcome to Stats Hub!", message: "Connect your first account to start tracking.", type: "info", read: false, timestamp: new Date().toISOString() }
   ])
   const [activeWorkspace, setActiveWorkspace] = useState<Workspace | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [apiConfigured, setApiConfigured] = useState(false)
 
-  // Check auth on mount
+  // Check auth on mount — uses native Whop token (no login/logout needed)
   useEffect(() => {
     fetch("/api/auth")
       .then(r => r.json())
       .then(d => {
-        // Whop version: always use returned user OR a fallback
-        setUser(d.user ?? { id: "whop-anon", email: "member@statshub.whop", name: "Whop Member" })
+        if (d.user) setUser(d.user)
         setIsAuthLoading(false)
       })
       .catch(() => {
-        // If auth API fails (e.g. cold start), show dashboard anyway
-        setUser({ id: "whop-anon", email: "member@statshub.whop", name: "Whop Member" })
         setIsAuthLoading(false)
       })
   }, [])
@@ -149,19 +143,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  const logout = async () => {
-    await fetch("/api/auth", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "logout" })
-    })
-    setUser(null)
-    setWorkspaces([])
-    setAccounts([])
-    setSnapshots({})
-    setActiveWorkspace(null)
-    router.push("/login")
-  }
+  // No logout needed — Whop handles authentication natively
 
   const addAccount = async (handle: string, platform: SocialPlatform = "tiktok", manualData?: { followers?: number; views?: number; posts?: number; engagement?: number }) => {
     if (!activeWorkspace) return { success: false, error: "No active workspace" }
@@ -244,7 +226,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 
   return (
     <WorkspaceContext.Provider value={{
-      user, isAuthLoading, logout,
+      user, isAuthLoading,
       workspaces, accounts, snapshots, notifications, activeWorkspace, setActiveWorkspace,
       addAccount, syncAccount, addWorkspace, renameWorkspace, deleteWorkspace, deleteAccount, markNotificationRead,
       isLoading, apiConfigured

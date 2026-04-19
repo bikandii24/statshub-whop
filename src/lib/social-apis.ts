@@ -58,14 +58,15 @@ interface FetchResult {
 
 // ────────────────────────────────────────────────────────────────────────────
 // INSTAGRAM — instagram-scraper-api-advanced.p.rapidapi.com (HookAPI)
-// 2000 free req/month — GET /api/user/info/{username}  (path param, no query)
-// Fields: data.followers, data.following, data.postsCount, data.profilePicture
+// Note: Instagram blocks most scrapers without a live session.
+// This fetcher makes a best-effort attempt. If Instagram blocks,
+// it returns success=true with followers=0 so the account can be
+// tracked manually by the user.
 // ────────────────────────────────────────────────────────────────────────────
 export async function fetchInstagramStats(username: string): Promise<FetchResult> {
   const host  = 'instagram-scraper-api-advanced.p.rapidapi.com'
   const clean = username.replace(/^@/, '').trim()
   try {
-    // 1. Profile — path parameter, 12s timeout to avoid hanging
     const controller = new AbortController()
     const timer = setTimeout(() => controller.abort(), 12_000)
     let raw: any
@@ -81,7 +82,7 @@ export async function fetchInstagramStats(username: string): Promise<FetchResult
       clearTimeout(timer)
       if (!res.ok) {
         const body = await res.text().catch(() => '')
-        if (res.status === 403) throw new Error(`API not subscribed. Subscribe to ${host} on rapidapi.com.`)
+        if (res.status === 403) throw new Error(`Not subscribed to Instagram API.`)
         if (res.status === 429) throw new Error(`Rate limit reached. Try again later.`)
         throw new Error(`HTTP ${res.status}: ${body.slice(0, 120)}`)
       }
@@ -90,61 +91,40 @@ export async function fetchInstagramStats(username: string): Promise<FetchResult
       clearTimeout(timer)
     }
 
-    // Response: { success: true, data: { username, name, profilePicture, followers, following, postsCount, bio } }
     const d = raw?.data ?? raw
+
+    // Instagram blocks scrapers without a session — API returns username but null stats
+    // In this case, we still create the account so the user can enter stats manually
+    const isBlocked = !!d?.message?.includes('login') || (!d?.followers && !d?.follower_count)
+
     if (!d?.username && !d?.name) {
       return { success: false, error: `Instagram: account @${clean} not found or private.` }
     }
 
-    // 2. Posts (optional — not all plans include it)
-    let recentPosts: RecentPost[] = []
-    try {
-      const postsRes = await fetch(`https://${host}/api/user/posts/${encodeURIComponent(clean)}`, {
-        headers: { 'x-rapidapi-host': host, 'x-rapidapi-key': RAPIDAPI_KEY },
-        cache: 'no-store',
-      })
-      if (postsRes.ok) {
-        const postsRaw = await postsRes.json()
-        const items: any[] = postsRaw?.data?.posts ?? postsRaw?.data ?? postsRaw?.posts ?? []
-        recentPosts = items.slice(0, 50).map((p: any) => ({
-          id: String(p.id ?? p.pk ?? Math.random()),
-          description: (p.caption ?? p.text ?? '').slice(0, 120),
-          thumbnail: p.thumbnailUrl ?? p.imageUrl ?? p.display_url ?? '',
-          views: p.videoViews ?? p.video_view_count ?? p.viewCount ?? 0,
-          likes: p.likes ?? p.likeCount ?? p.like_count ?? 0,
-          comments: p.comments ?? p.commentCount ?? p.comment_count ?? 0,
-          shares: 0,
-          createTime: p.timestamp ?? p.taken_at ?? 0,
-          url: p.url ?? (p.shortcode ? `https://www.instagram.com/p/${p.shortcode}/` : undefined),
-          type: (p.type === 'video' || p.isVideo ? 'reel' : 'post') as RecentPost['type'],
-        }))
-      }
-    } catch { /* posts optional */ }
-
-    const followerCount = d.followers  ?? 0
-    const postCount     = d.postsCount ?? 0
-    const totalLikes    = recentPosts.reduce((s, p) => s + p.likes, 0)
-    const engagement    = followerCount > 0 && recentPosts.length > 0
-      ? parseFloat(((totalLikes / recentPosts.length / followerCount) * 100).toFixed(2))
-      : 0
+    const followerCount = d.followers ?? d.follower_count ?? 0
+    const postCount     = d.postsCount ?? d.media_count ?? 0
 
     return {
       success: true,
       data: {
         handle:    d.username ?? clean,
         followers: followerCount,
-        following: d.following  ?? 0,
+        following: d.following ?? d.following_count ?? 0,
         posts:     postCount,
-        views:     recentPosts.reduce((s, p) => s + p.views, 0),
+        views:     0,
         avatar:    d.profilePicture ?? d.profile_pic_url ?? '',
-        bio:       d.bio ?? d.biography ?? '',
+        bio:       isBlocked
+          ? '⚠️ Instagram requires manual stat entry. Use the edit button to enter your follower count.'
+          : (d.bio ?? d.biography ?? ''),
         verified:  d.isVerified ?? d.is_verified ?? false,
         lastSync:  fmtDate(),
-        recentPosts,
+        recentPosts: [],
       },
     }
   } catch (err: any) {
-    const msg = err.name === 'AbortError' ? 'Instagram API timeout (12s). Instagram may be blocking scrapers.' : err.message
+    const msg = err.name === 'AbortError'
+      ? 'Instagram API timeout. Please enter stats manually.'
+      : err.message
     return { success: false, error: `Instagram: ${msg}` }
   }
 }
@@ -225,7 +205,7 @@ export async function fetchYouTubeStats(handle: string): Promise<FetchResult> {
   const host = 'youtube-v31.p.rapidapi.com'
   const clean = handle.replace(/^@/, '')
   try {
-    // 1. Channel info (profile + uploads playlist ID)
+    // 1. Channel info — try forHandle first, fall back to forUsername, then search
     const channelParams: Record<string, string> = {
       part: 'statistics,snippet,contentDetails',
       maxResults: '1',
@@ -233,10 +213,41 @@ export async function fetchYouTubeStats(handle: string): Promise<FetchResult> {
     if (clean.startsWith('UC') && clean.length > 20) {
       channelParams.id = clean
     } else {
-      channelParams.forHandle = `@${clean}`
+      // forHandle requires '@' prefix and is unreliable — try forUsername first
+      channelParams.forUsername = clean
     }
-    const channelJson = await rapidFetch(host, '/channels', channelParams)
-    const channel = channelJson?.items?.[0]
+    let channelJson = await rapidFetch(host, '/channels', channelParams)
+    let channel = channelJson?.items?.[0]
+
+    // If forUsername returned nothing, try forHandle
+    if (!channel) {
+      const handleParams: Record<string, string> = {
+        part: 'statistics,snippet,contentDetails',
+        maxResults: '1',
+        forHandle: `@${clean}`,
+      }
+      const handleJson = await rapidFetch(host, '/channels', handleParams)
+      channel = handleJson?.items?.[0]
+    }
+
+    // Last resort: search by query
+    if (!channel) {
+      const searchJson = await rapidFetch(host, '/search', {
+        part: 'snippet',
+        q: clean,
+        type: 'channel',
+        maxResults: '1',
+      })
+      const channelId = searchJson?.items?.[0]?.id?.channelId
+      if (channelId) {
+        const byIdJson = await rapidFetch(host, '/channels', {
+          part: 'statistics,snippet,contentDetails',
+          id: channelId,
+        })
+        channel = byIdJson?.items?.[0]
+      }
+    }
+
     if (!channel) return { success: false, error: 'YouTube channel not found.' }
 
     const stats   = channel.statistics ?? {}

@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from "next/server"
-import { verifyToken } from "@/lib/auth"
+import { getWhopUser } from "@/lib/whop"
 import { readSettings, writeSettings, readUsers, writeUsers } from "@/lib/storage"
 
+async function getUser(req: NextRequest) {
+  return await getWhopUser(req.headers) ?? (process.env.NODE_ENV === 'development' ? { id: 'dev-local-user', email: 'dev@statshub.app', name: 'Dev User' } : null)
+}
+
 export async function GET(req: NextRequest) {
-  const token = req.cookies.get("sh_token")?.value
-  const user  = token ? (await import("@/lib/auth")).verifyToken(token) : null
+  const user = await getUser(req)
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
   const settings = await readSettings()
@@ -24,8 +27,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const token = req.cookies.get("sh_token")?.value
-  const user  = token ? (await import("@/lib/auth")).verifyToken(token) : null
+  const user = await getUser(req)
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
   const body = await req.json().catch(() => ({}))
@@ -33,7 +35,7 @@ export async function POST(req: NextRequest) {
 
   if (action === "save-rapidapi-key") {
     if (!key || typeof key !== "string" || key.trim().length < 10) {
-      return NextResponse.json({ error: "Clave inválida" }, { status: 400 })
+      return NextResponse.json({ error: "Invalid key" }, { status: 400 })
     }
     const settings = await readSettings()
     settings.RAPIDAPI_KEY = key.trim()
@@ -54,7 +56,7 @@ export async function POST(req: NextRequest) {
     const users   = await readUsers()
     let found = users.find((u: any) => u.id === user.id)
     if (!found) {
-      found = { id: user.id, email: user.email, createdAt: new Date().toISOString() }
+      found = { id: user.id, email: (user as any).email, createdAt: new Date().toISOString() }
       users.push(found)
     }
     found.dataConsent   = consent
@@ -63,6 +65,5 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, dataConsent: consent })
   }
 
-  return NextResponse.json({ error: "Acción desconocida" }, { status: 400 })
+  return NextResponse.json({ error: "Unknown action" }, { status: 400 })
 }
-

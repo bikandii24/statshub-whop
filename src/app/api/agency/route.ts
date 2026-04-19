@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { verifyToken } from "@/lib/auth"
+import { getWhopUser } from "@/lib/whop"
 import { readAgencyDB, writeAgencyDB, readSettings } from "@/lib/storage"
 
 // Reuse TikTok scraper logic
@@ -44,29 +44,27 @@ async function fetchTikTokAccount(handle: string): Promise<any | null> {
 }
 
 export async function GET(req: NextRequest) {
-  const _t = req.cookies.get("sh_token")?.value
-  const _b = req.cookies.get("whop_bid")?.value
-  if (!_t && !_b) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  const user = await getWhopUser(req.headers)
+  if (!user && process.env.NODE_ENV !== 'development') return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   const db = await readAgencyDB()
   return NextResponse.json({ clients: db.clients })
 }
 
 export async function POST(req: NextRequest) {
-  const _t2 = req.cookies.get("sh_token")?.value
-  const _b2 = req.cookies.get("whop_bid")?.value
-  if (!_t2 && !_b2) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  const user = await getWhopUser(req.headers)
+  if (!user && process.env.NODE_ENV !== 'development') return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
   const { action, payload } = await req.json()
   const db = await readAgencyDB()
 
   if (action === "add-client") {
     const { handle } = payload
-    if (!handle) return NextResponse.json({ error: "Handle requerido" }, { status: 400 })
+    if (!handle) return NextResponse.json({ error: "Handle required" }, { status: 400 })
     const already = db.clients.find(c => c.handle.toLowerCase() === `@${handle.replace(/^@/, "").toLowerCase()}`)
-    if (already) return NextResponse.json({ error: "Esta cuenta ya está en la agencia" }, { status: 409 })
+    if (already) return NextResponse.json({ error: "This account is already in the agency" }, { status: 409 })
 
     const account = await fetchTikTokAccount(handle)
-    if (!account) return NextResponse.json({ error: "No se pudo obtener la cuenta. Verifica el handle o la API Key." }, { status: 404 })
+    if (!account) return NextResponse.json({ error: "Could not fetch account. Check the handle or API Key." }, { status: 404 })
     db.clients.push(account)
     await writeAgencyDB(db)
     return NextResponse.json({ client: account, clients: db.clients })
@@ -75,16 +73,16 @@ export async function POST(req: NextRequest) {
   // Bulk import: array of handles
   if (action === "bulk-add-clients") {
     const { handles } = payload as { handles: string[] }
-    if (!handles || !handles.length) return NextResponse.json({ error: "Lista vacía" }, { status: 400 })
+    if (!handles || !handles.length) return NextResponse.json({ error: "Empty list" }, { status: 400 })
 
     const results: { handle: string; ok: boolean; error?: string }[] = []
     for (const h of handles.slice(0, 20)) { // max 20 at once
       const clean = h.replace(/^@/, "").trim().toLowerCase()
       if (!clean) continue
       const already = db.clients.find(c => c.handle.toLowerCase() === `@${clean}`)
-      if (already) { results.push({ handle: `@${clean}`, ok: false, error: "Ya existe" }); continue }
+      if (already) { results.push({ handle: `@${clean}`, ok: false, error: "Already exists" }); continue }
       const acc = await fetchTikTokAccount(h)
-      if (!acc) { results.push({ handle: `@${clean}`, ok: false, error: "No encontrado" }); continue }
+      if (!acc) { results.push({ handle: `@${clean}`, ok: false, error: "Not found" }); continue }
       db.clients.push(acc)
       results.push({ handle: `@${clean}`, ok: true })
     }
@@ -110,13 +108,13 @@ export async function POST(req: NextRequest) {
   if (action === "sync-client") {
     const { id } = payload
     const client = db.clients.find(c => c.id === id)
-    if (!client) return NextResponse.json({ error: "Cliente no encontrado" }, { status: 404 })
+    if (!client) return NextResponse.json({ error: "Client not found" }, { status: 404 })
     const updated = await fetchTikTokAccount(client.handle)
-    if (!updated) return NextResponse.json({ error: "No se pudo sincronizar" }, { status: 500 })
+    if (!updated) return NextResponse.json({ error: "Could not sync" }, { status: 500 })
     Object.assign(client, { ...updated, id: client.id, agencyNote: client.agencyNote })
     await writeAgencyDB(db)
     return NextResponse.json({ clients: db.clients })
   }
 
-  return NextResponse.json({ error: "Acción desconocida" }, { status: 400 })
+  return NextResponse.json({ error: "Unknown action" }, { status: 400 })
 }

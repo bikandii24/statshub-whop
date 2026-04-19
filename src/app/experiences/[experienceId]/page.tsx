@@ -1,42 +1,48 @@
-"use client"
+// Whop App entry point — server component
+// Whop loads the app at /experiences/[experienceId]
+// We verify the user via the x-whop-user-token header (auto-injected by Whop iframe)
+// then redirect to the dashboard with company isolation context set.
 
-import { useEffect } from "react"
-import { useRouter, useParams } from "next/navigation"
-import { Loader2, BarChart3 } from "lucide-react"
+import { headers } from "next/headers"
+import { redirect } from "next/navigation"
+import { whopsdk } from "@/lib/whop"
+import { BarChart3, Loader2 } from "lucide-react"
 
-// Whop loads the iframe at /experiences/[experienceId]?whop-dev-user-token=...
-// We just redirect to the dashboard root after capturing the token
-export default function ExperiencePage() {
-  const router = useRouter()
-  const params = useParams()
+export default async function ExperiencePage({
+  params,
+}: {
+  params: Promise<{ experienceId: string }>
+}) {
+  const { experienceId } = await params
+  const hdrs = await headers()
 
-  useEffect(() => {
-    // Extract whop-dev-user-token from URL if present
-    const searchParams = new URLSearchParams(window.location.search)
-    const whopToken = searchParams.get("whop-dev-user-token")
+  try {
+    // Verify user via native Whop token (injected in x-whop-user-token header)
+    const { userId } = await whopsdk.verifyUserToken(hdrs)
 
-    const redirect = () => router.replace("/")
+    // Fetch experience to get company context (for multi-tenant data isolation)
+    const experience = await whopsdk.experiences.retrieve(experienceId)
+    const companyId = experience.company.id
 
-    if (whopToken) {
-      // Send token to auto-session endpoint to create a proper session
-      fetch(`/api/auth/whop-token?token=${encodeURIComponent(whopToken)}`)
-        .then(() => redirect())
-        .catch(() => redirect())
-    } else {
-      redirect()
+    // Check user has access to this experience
+    await whopsdk.users.checkAccess(experienceId, { id: userId })
+
+    // Redirect to main dashboard — session is now established via Whop headers
+    redirect("/")
+  } catch (err: any) {
+    // In development (no Whop iframe): redirect to dashboard with dev session
+    if (process.env.NODE_ENV === "development") {
+      redirect("/")
     }
-  }, [router])
 
-  return (
-    <div
-      className="min-h-screen flex flex-col items-center justify-center gap-4"
-      style={{ background: "oklch(0.07 0.018 260)" }}
-    >
-      <div className="size-14 rounded-2xl bg-gradient-to-br from-violet-600 to-purple-600 flex items-center justify-center shadow-2xl shadow-violet-500/30">
-        <BarChart3 className="size-7 text-white" />
+    // Access denied or token missing
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-background">
+        <div className="size-14 rounded-2xl bg-gradient-to-br from-violet-600 to-purple-600 flex items-center justify-center shadow-2xl shadow-violet-500/30">
+          <BarChart3 className="size-7 text-white" />
+        </div>
+        <p className="text-sm text-muted-foreground">Access required. Please purchase access through Whop.</p>
       </div>
-      <Loader2 className="size-5 animate-spin text-violet-400" />
-      <p className="text-xs text-white/30 font-medium">Loading Stats Hub…</p>
-    </div>
-  )
+    )
+  }
 }

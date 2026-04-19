@@ -1,15 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { verifyToken } from '@/lib/auth'
+import { getWhopUser } from '@/lib/whop'
 import { readDB, writeDB } from '@/lib/storage'
 
-function getUser(req: NextRequest) {
-  const token = req.cookies.get('sh_token')?.value
-  return token ? verifyToken(token) : null
+async function getUser(req: NextRequest) {
+  return await getWhopUser(req.headers) ?? (process.env.NODE_ENV === 'development' ? { id: 'dev-local-user', email: 'dev@statshub.app', name: 'Dev User' } : null)
 }
 
 // ── GET: list goals & alerts for user ────────────────────────────────────
 export async function GET(req: NextRequest) {
-  const user = getUser(req)
+  const user = await getUser(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const db = await readDB() as any
@@ -21,7 +20,7 @@ export async function GET(req: NextRequest) {
 
 // ── POST: create / delete goals and alerts ────────────────────────────────
 export async function POST(req: NextRequest) {
-  const user = getUser(req)
+  const user = await getUser(req)
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { action, payload } = await req.json()
@@ -34,7 +33,7 @@ export async function POST(req: NextRequest) {
   // ── GOALS ──────────────────────────────────────────────────────────────
   if (action === 'add-goal') {
     const { accountId, handle, workspaceId, type, target, deadline } = payload
-    if (!type || !target) return NextResponse.json({ error: 'type y target requeridos' }, { status: 400 })
+    if (!type || !target) return NextResponse.json({ error: 'type and target required' }, { status: 400 })
     const goal = {
       id: `goal-${Date.now()}`,
       accountId, handle, workspaceId,
@@ -57,7 +56,7 @@ export async function POST(req: NextRequest) {
   // ── ALERTS ─────────────────────────────────────────────────────────────
   if (action === 'add-alert') {
     const { handle, type, threshold } = payload
-    if (!handle || !threshold) return NextResponse.json({ error: 'handle y threshold requeridos' }, { status: 400 })
+    if (!handle || !threshold) return NextResponse.json({ error: 'handle and threshold required' }, { status: 400 })
     const existing = db.alerts[user.id].find((a: any) => a.handle === handle && a.type === type)
     if (existing) {
       existing.threshold = Number(threshold)

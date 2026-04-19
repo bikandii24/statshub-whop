@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { verifyToken } from "@/lib/auth"
+import { getWhopUser } from "@/lib/whop"
 import { readDB, writeDB } from "@/lib/storage"
 
 function fmt(n: number) {
@@ -38,9 +38,7 @@ function mapUser(u: any) {
 
 // ── GET: search or return manual competitors ──────────────────────────────
 export async function GET(req: NextRequest) {
-  const token = req.cookies.get("sh_token")?.value
-  const bid = req.cookies.get("whop_bid")?.value
-  const user = token ? verifyToken(token) : bid ? { id: `whop-${bid}`, email: `user-${bid.slice(0,6)}@statshub.whop`, name: 'Whop Member' } : null
+  const user = await getWhopUser(req.headers) ?? (process.env.NODE_ENV === 'development' ? { id: 'dev-local-user', email: 'dev@statshub.app', name: 'Dev User' } : null)
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
   const { searchParams } = new URL(req.url)
@@ -66,7 +64,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       competitors: workspaceManual,
       keyword,
-      warning: "API no configurada. Mostrando solo competidores manuales.",
+      warning: "API not configured. Showing manual competitors only.",
     })
   }
 
@@ -175,7 +173,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({
         competitors: workspaceManual,
         keyword,
-        warning: `Sin resultados para "${keyword}". ${workspaceManual.length > 0 ? "Mostrando competidores manuales." : "Prueba otra palabra clave o añade competidores manualmente."}`,
+        warning: `No results for "${keyword}". ${workspaceManual.length > 0 ? "Showing manual competitors." : "Try another keyword or add competitors manually."}`,
       })
     }
 
@@ -205,7 +203,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       competitors: workspaceManual,
       keyword,
-      warning: "Error de conexión con la API. Mostrando solo competidores manuales.",
+      warning: "API connection error. Showing manual competitors only.",
       error: err.message,
     })
   }
@@ -213,9 +211,7 @@ export async function GET(req: NextRequest) {
 
 // ── POST: add / delete manual competitor ─────────────────────────────────
 export async function POST(req: NextRequest) {
-  const token2 = req.cookies.get("sh_token")?.value
-  const bid2 = req.cookies.get("whop_bid")?.value
-  const user = token2 ? verifyToken(token2) : bid2 ? { id: `whop-${bid2}`, email: `user-${bid2.slice(0,6)}@statshub.whop`, name: 'Whop Member' } : null
+  const user = await getWhopUser(req.headers) ?? (process.env.NODE_ENV === 'development' ? { id: 'dev-local-user', email: 'dev@statshub.app', name: 'Dev User' } : null)
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
   const { action, payload } = await req.json()
@@ -225,13 +221,13 @@ export async function POST(req: NextRequest) {
 
   if (action === "add-manual") {
     const { handle, workspaceId } = payload
-    if (!handle) return NextResponse.json({ error: "Handle requerido" }, { status: 400 })
+    if (!handle) return NextResponse.json({ error: "Handle required" }, { status: 400 })
 
     const normalized = handle.toLowerCase().replace(/^@/, "")
     const duplicate = db.competitors[user.id].find((c: any) =>
       c.handle.toLowerCase().replace(/^@/, "") === normalized
     )
-    if (duplicate) return NextResponse.json({ error: "Este competidor ya está en tu lista." }, { status: 409 })
+    if (duplicate) return NextResponse.json({ error: "This competitor is already in your list." }, { status: 409 })
 
     // Try to fetch real TikTok stats for this handle
     const key = process.env.RAPIDAPI_KEY

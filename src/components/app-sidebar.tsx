@@ -3,7 +3,7 @@
 import * as React from "react"
 import {
   BarChart3, TrendingUp, Video, Zap, Settings, ChevronRight, Plus,
-  ChevronsUpDown, LogOut, Folder, LayoutDashboard, Newspaper, Pencil, Check, X, Trash2,
+  ChevronsUpDown, Folder, LayoutDashboard, Newspaper, Pencil, Check, X, Trash2,
 } from "lucide-react"
 
 import {
@@ -32,7 +32,7 @@ const iconMap: Record<string, any> = {
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const t = useT()
   const pathname = usePathname()
-  const { user, workspaces, activeWorkspace, setActiveWorkspace, addWorkspace, renameWorkspace, deleteWorkspace, isLoading, logout } = useWorkspace()
+  const { user, workspaces, activeWorkspace, setActiveWorkspace, addWorkspace, renameWorkspace, deleteWorkspace, isLoading } = useWorkspace()
   const [wsOpen, setWsOpen] = React.useState(false)
   const [addingWs, setAddingWs] = React.useState(false)
   const [newWsName, setNewWsName] = React.useState("")
@@ -262,17 +262,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </div>
 
         {/* User chip */}
-        <div className="mt-5 flex items-center gap-3 px-2 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.06]">
+        <div className="mt-5 flex items-center gap-3 px-2 py-2.5 rounded-xl bg-white/[0.04] dark:bg-white/[0.04] border border-white/[0.06] dark:border-white/[0.06]">
           <div className="size-8 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center font-black text-sm text-white shadow-lg shrink-0">
             {userInitial}
           </div>
           <div className="flex-1 min-w-0">
-            <div className="text-sm font-bold text-white truncate">{user?.name ?? "User"}</div>
+            <div className="text-sm font-bold text-foreground truncate">{user?.name ?? "User"}</div>
             <div className="text-[9px] font-black text-muted-foreground/50 uppercase tracking-widest truncate">{user?.email ?? ""}</div>
           </div>
-          <button onClick={logout} title="Sign out" className="text-muted-foreground/30 hover:text-red-400 transition-colors shrink-0">
-            <LogOut className="size-3.5" />
-          </button>
         </div>
       </SidebarHeader>
 

@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { verifyToken } from '@/lib/auth'
+import { getWhopUser } from '@/lib/whop'
 
 /**
  * Server-side image proxy — bypasses TikTok CDN referrer blocks.
- * Requires valid JWT session cookie (logged-in users only).
+ * Requires valid Whop session (authenticated users only).
  */
 export async function GET(req: NextRequest) {
   // ── Auth guard ────────────────────────────────────────────────────────────
-  const token = req.cookies.get('sh_token')?.value
-  if (!token || !verifyToken(token)) {
+  const user = await getWhopUser(req.headers)
+  if (!user && process.env.NODE_ENV !== 'development') {
     return new NextResponse(null, { status: 401 })
   }
 
