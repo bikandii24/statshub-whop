@@ -4,18 +4,30 @@
 
 import { Whop } from "@whop/sdk"
 
-export const whopsdk = new Whop({
-  appID: process.env.NEXT_PUBLIC_WHOP_APP_ID,
-  apiKey: process.env.WHOP_API_KEY,
-})
+let _whopsdk: Whop | null = null;
+function getWhopSdk() {
+  if (!_whopsdk) {
+    try {
+      _whopsdk = new Whop({
+        appID: process.env.NEXT_PUBLIC_WHOP_APP_ID,
+        apiKey: process.env.WHOP_API_KEY,
+      })
+    } catch (e) {
+      // Ignore during build
+    }
+  }
+  return _whopsdk;
+}
 
 // ── Helper: extract userId from headers ──
 // In production, Whop sets x-whop-user-token on every iframe request.
 // verifyUserToken decodes the JWT and returns { userId }.
 export async function getWhopUser(headers: Headers) {
   try {
-    const { userId } = await whopsdk.verifyUserToken(headers)
-    const user = await whopsdk.users.retrieve(userId)
+    const sdk = getWhopSdk();
+    if (!sdk) return null;
+    const { userId } = await sdk.verifyUserToken(headers)
+    const user = await sdk.users.retrieve(userId)
     return {
       id: userId,
       name: user.name || `@${user.username}` || "User",
@@ -31,7 +43,9 @@ export async function getWhopUser(headers: Headers) {
 // ── Helper: get companyId from an experienceId ──
 export async function getCompanyFromExperience(experienceId: string) {
   try {
-    const experience = await whopsdk.experiences.retrieve(experienceId)
+    const sdk = getWhopSdk();
+    if (!sdk) return null;
+    const experience = await sdk.experiences.retrieve(experienceId)
     return experience.company.id ?? null
   } catch {
     return null
