@@ -9,8 +9,8 @@ import { useT } from "@/i18n"
 const NAV_ITEMS = [
   { href: "/",              icon: LayoutDashboard, labelKey: "nav_dashboard" as const },
   { href: "/accounts", icon: Video,           labelKey: "nav_tiktok"    as const },
-  { href: "/analitica",     icon: BarChart3,       labelKey: "nav_analytics" as const },
-  { href: "/configuracion", icon: Settings,        labelKey: "nav_settings"  as const },
+  { href: "/analytics",     icon: BarChart3,       labelKey: "nav_analytics" as const },
+  { href: "/settings", icon: Settings,        labelKey: "nav_settings"  as const },
 ]
 
 export function MobileBottomNav() {

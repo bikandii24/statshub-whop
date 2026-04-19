@@ -1,24 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-// ── Sources (Spanish first, then English) ────────────────────────────────────
+// ── Sources (English) ────────────────────────────────────
 const SOURCES = [
-  // 🇪🇸 Spanish sources (no translation needed)
-  { url: 'https://www.xataka.com/feedburner.xml', name: 'Xataka', lang: 'es' },
-  { url: 'https://www.genbeta.com/feedburner.xml', name: 'Genbeta', lang: 'es' },
-  { url: 'https://marketing4ecommerce.net/feed/', name: 'Marketing4eCommerce', lang: 'es' },
-  { url: 'https://www.elconfidencial.com/rss/tecnologia/', name: 'El Confidencial Tech', lang: 'es' },
-  { url: 'https://feeds.weblogssl.com/xatakamovil', name: 'Xataka Móvil', lang: 'es' },
-  // 🌐 English sources (will be translated)
   { url: 'https://techcrunch.com/feed/', name: 'TechCrunch', lang: 'en' },
   { url: 'https://www.socialmediaexaminer.com/feed/', name: 'Social Media Examiner', lang: 'en' },
+  { url: 'https://www.theverge.com/rss/index.xml', name: 'The Verge', lang: 'en' },
+  { url: 'https://mashable.com/feeds/rss/all', name: 'Mashable', lang: 'en' },
 ]
 
-// ── Category keywords (Spanish & English) ─────────────────────────────────────
+// ── Category keywords (English) ─────────────────────────────────────
 const CATEGORIES: Record<string, string[]> = {
-  'Herramientas IA': ['ia ', 'inteligencia artificial', 'chatgpt', 'openai', 'gemini', 'claude', 'llm', 'gpt', 'machine learning', 'deepmind', 'copilot', 'midjourney', 'dall-e', 'generativa', 'neural', 'ai ', 'artificial intelligence'],
-  'Redes Sociales':  ['tiktok', 'instagram', 'reels', 'creador', 'influencer', 'creator', 'youtube', 'shorts', 'viral', 'trend', 'tendencia'],
-  'Negocios':        ['startup', 'inversión', 'financiación', 'revenue', 'ecommerce', 'marketing', 'marca', 'brand', 'business', 'funding'],
-  'Tecnología':      ['apple', 'google', 'microsoft', 'android', 'iphone', 'smartphone', 'app', 'software', 'hardware', 'tech'],
+  'AI Tools': ['ai ', 'artificial intelligence', 'chatgpt', 'openai', 'gemini', 'claude', 'llm', 'gpt', 'machine learning', 'deepmind', 'copilot', 'midjourney', 'dall-e', 'generative', 'neural'],
+  'Social Media':  ['tiktok', 'instagram', 'reels', 'creator', 'influencer', 'youtube', 'shorts', 'viral', 'trend'],
+  'Business':        ['startup', 'investment', 'funding', 'revenue', 'ecommerce', 'marketing', 'brand', 'business'],
+  'Technology':      ['apple', 'google', 'microsoft', 'android', 'iphone', 'smartphone', 'app', 'software', 'hardware', 'tech'],
 }
 
 function categorizarNoticia(title: string, desc: string): string {
@@ -26,26 +21,7 @@ function categorizarNoticia(title: string, desc: string): string {
   for (const [cat, keywords] of Object.entries(CATEGORIES)) {
     if (keywords.some(kw => text.includes(kw))) return cat
   }
-  return 'Tecnología'
-}
-
-// ── Free translation via MyMemory API (500 words/day free) ───────────────────
-async function translateToSpanish(text: string): Promise<string> {
-  if (!text || text.trim().length === 0) return text
-  try {
-    const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text.slice(0, 200))}&langpair=en|es`
-    const res = await fetch(url, { signal: AbortSignal.timeout(4000) })
-    if (!res.ok) return text
-    const data = await res.json()
-    const translated = data?.responseData?.translatedText
-    // MyMemory returns the original if it can't translate
-    if (translated && translated !== text && !translated.toUpperCase().includes('MYMEMORY')) {
-      return translated
-    }
-  } catch {
-    // silently fallback to original
-  }
-  return text
+  return 'Technology'
 }
 
 // ── XML parser ────────────────────────────────────────────────────────────────
@@ -133,17 +109,6 @@ async function fetchAllNews(): Promise<any[]> {
     .sort((a, b) => b.ts - a.ts)
     .filter((item, i, arr) => arr.findIndex(x => x.title.slice(0, 40) === item.title.slice(0, 40)) === i)
     .slice(0, 50)
-
-  // Translate English titles/descriptions (batch, but limited to 15 to stay within free tier)
-  const toTranslate = unique.filter(item => item.lang === 'en').slice(0, 15)
-  await Promise.allSettled(
-    toTranslate.map(async item => {
-      item.title = await translateToSpanish(item.title)
-      if (item.description) {
-        item.description = await translateToSpanish(item.description.slice(0, 150))
-      }
-    })
-  )
 
   const final = unique.slice(0, 40).map((item, i) => {
     return {

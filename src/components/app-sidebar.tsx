@@ -46,10 +46,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     { title: t.nav_tiktok,        url: "/accounts", icon: Video,           color: "text-pink-400",   activeColor: "bg-pink-500/15 text-pink-400 border-pink-500/25",       hoverColor: "hover:bg-pink-500/5 hover:text-pink-300",     glowColor: "rgba(236,72,153,0.8)" },
   ]
   const navAnalytics = [
-    { title: t.nav_analytics,     url: "/analitica",               icon: BarChart3,  color: "text-blue-400",    activeColor: "bg-blue-500/15 text-blue-400 border-blue-500/25",       hoverColor: "hover:bg-blue-500/5 hover:text-blue-300",     glowColor: "rgba(59,130,246,0.8)" },
-    { title: t.nav_competition,   url: "/seguimiento-competencia", icon: TrendingUp, color: "text-emerald-400", activeColor: "bg-emerald-500/15 text-emerald-400 border-emerald-500/25", hoverColor: "hover:bg-emerald-500/5 hover:text-emerald-300", glowColor: "rgba(16,185,129,0.8)" },
-    { title: t.nav_news,          url: "/consolidado-noticias",    icon: Newspaper,  color: "text-amber-400",   activeColor: "bg-amber-500/15 text-amber-400 border-amber-500/25",   hoverColor: "hover:bg-amber-500/5 hover:text-amber-300",   glowColor: "rgba(245,158,11,0.8)", badge: "3" },
-    { title: t.nav_agencies,      url: "/agencia",                 icon: Folder,     color: "text-indigo-400",  activeColor: "bg-indigo-500/15 text-indigo-400 border-indigo-500/25", hoverColor: "hover:bg-indigo-500/5 hover:text-indigo-300", glowColor: "rgba(99,102,241,0.8)" },
+    { title: t.nav_analytics,     url: "/analytics",               icon: BarChart3,  color: "text-blue-400",    activeColor: "bg-blue-500/15 text-blue-400 border-blue-500/25",       hoverColor: "hover:bg-blue-500/5 hover:text-blue-300",     glowColor: "rgba(59,130,246,0.8)" },
+    { title: t.nav_competition,   url: "/competition", icon: TrendingUp, color: "text-emerald-400", activeColor: "bg-emerald-500/15 text-emerald-400 border-emerald-500/25", hoverColor: "hover:bg-emerald-500/5 hover:text-emerald-300", glowColor: "rgba(16,185,129,0.8)" },
+    { title: t.nav_news,          url: "/news",    icon: Newspaper,  color: "text-amber-400",   activeColor: "bg-amber-500/15 text-amber-400 border-amber-500/25",   hoverColor: "hover:bg-amber-500/5 hover:text-amber-300",   glowColor: "rgba(245,158,11,0.8)", badge: "3" },
+    { title: t.nav_agencies,      url: "/agency",                 icon: Folder,     color: "text-indigo-400",  activeColor: "bg-indigo-500/15 text-indigo-400 border-indigo-500/25", hoverColor: "hover:bg-indigo-500/5 hover:text-indigo-300", glowColor: "rgba(99,102,241,0.8)" },
   ]
 
   // Close dropdown on outside click
@@ -131,7 +131,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       {/* ── HEADER ── */}
       <SidebarHeader className="pt-6 pb-4 px-4">
         {/* Workspace Switcher */}
-        <div ref={wsRef} className="relative">
+        <div ref={wsRef} className="relative z-50">
           <button
             onClick={() => { setWsOpen(o => !o); setAddingWs(false) }}
             className="flex w-full items-center gap-2 overflow-hidden h-14 rounded-2xl border border-white/[0.06] bg-white/[0.02] px-3 cursor-pointer hover:bg-white/[0.04] transition-all duration-200 select-none text-left"
@@ -140,7 +140,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               <ActiveIcon className="size-5 text-white" />
             </div>
             <div className="grid flex-1 text-left leading-tight ml-1 overflow-hidden">
-              <span className="truncate font-black text-sm tracking-tighter text-white" style={{ fontFamily: "var(--font-syne)" }}>
+              <span className="truncate font-black text-sm text-white tracking-normal" style={{ fontFamily: "var(--font-syne)" }}>
                 {isLoading ? t.nav_loading : activeWorkspace?.name || "My Space"}
               </span>
               <span className="truncate text-[9px] font-black text-muted-foreground/50 uppercase tracking-[0.2em]">

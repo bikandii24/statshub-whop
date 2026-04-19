@@ -64,7 +64,7 @@ export default function Home() {
     },
     {
       title: "Analytics",
-      href: "/analitica",
+      href: "/analytics",
       description: "Real-time metrics across all your platforms.",
       icon: BarChart3,
       color: "text-blue-400",
@@ -77,7 +77,7 @@ export default function Home() {
     },
     {
       title: "Competition",
-      href: "/seguimiento-competencia",
+      href: "/competition",
       description: "Stay ahead of your rivals' trends.",
       icon: TrendingUp,
       color: "text-emerald-400",
@@ -90,7 +90,7 @@ export default function Home() {
     },
     {
       title: "News",
-      href: "/consolidado-noticias",
+      href: "/news",
       description: "Everything you need to know, in one place.",
       icon: Newspaper,
       color: "text-amber-400",
@@ -137,7 +137,7 @@ export default function Home() {
                   <Zap className="size-4 mr-2" fill="white" /> {t.dashboard_manage}
                 </Button>
               </Link>
-              <Link href="/analitica" className="w-full sm:w-auto">
+              <Link href="/analytics" className="w-full sm:w-auto">
                 <Button variant="outline" className="glass-sm h-11 px-7 rounded-full font-bold border-white/10 hover:bg-white/5 text-white/80 w-full">
                   {t.dashboard_view_analytics}
                 </Button>
@@ -174,7 +174,7 @@ export default function Home() {
         <h2 className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/40 mb-5">{t.dashboard_tools}</h2>
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 animate-stagger">
           {sections.map((section) => (
-            <Link key={section.title} href="/accounts" className="group">
+            <Link key={section.title} href={section.href} className="group">
               <Card className={`glass h-full border-white/[0.07] transition-all duration-500 group-hover:-translate-y-2 group-hover:bg-white/[0.04] ${section.glow}`}>
                 <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-3">
                   <div className={`p-2.5 rounded-xl ${section.bg} ${section.color} border ${section.border} shadow-inner shrink-0`}>

@@ -42,22 +42,11 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${syne.variable} ${geistMono.variable} font-sans antialiased`}
       >
-        {/* WhopApp syncs theme (light/dark) from host Whop page automatically */}
-        {hasWhopAppId ? (
-          <WhopApp>
-            <I18nProvider>
-              <AppLayoutClient>
-                {children}
-              </AppLayoutClient>
-            </I18nProvider>
-          </WhopApp>
-        ) : (
-          <I18nProvider>
-            <AppLayoutClient>
-              {children}
-            </AppLayoutClient>
-          </I18nProvider>
-        )}
+        <I18nProvider>
+          <AppLayoutClient>
+            {children}
+          </AppLayoutClient>
+        </I18nProvider>
       </body>
     </html>
   );
