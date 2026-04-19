@@ -1,3 +1,5 @@
+"use client"
+
 import { useT } from "@/i18n"
 import * as React from "react"
 import { useWorkspace } from "@/context/workspace-context"
