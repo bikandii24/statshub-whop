@@ -5,7 +5,7 @@
 import { Whop } from "@whop/sdk"
 
 let _whopsdk: Whop | null = null;
-function getWhopSdk() {
+export function getWhopSdk() {
   if (!_whopsdk) {
     try {
       _whopsdk = new Whop({

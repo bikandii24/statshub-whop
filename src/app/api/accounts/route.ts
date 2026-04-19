@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic"
 import { NextRequest, NextResponse } from 'next/server'
 import { fetchTikTokStats } from '@/lib/tiktok'
 import { fetchInstagramStats, fetchTwitterStats, fetchYouTubeStats, fetchFacebookStats } from '@/lib/social-apis'
