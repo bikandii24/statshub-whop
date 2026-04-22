@@ -107,7 +107,7 @@ async function fetchAllNews(): Promise<any[]> {
   }
 
   // Sort, deduplicate
-  let unique = all
+  const unique = all
     .sort((a, b) => b.ts - a.ts)
     .filter((item, i, arr) => arr.findIndex(x => x.title.slice(0, 40) === item.title.slice(0, 40)) === i)
     .slice(0, 50)

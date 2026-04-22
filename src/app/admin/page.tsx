@@ -1,5 +1,6 @@
 "use client"
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import * as React from "react"
 import {
   Users, Database, TrendingUp, Download, Search, Shield,

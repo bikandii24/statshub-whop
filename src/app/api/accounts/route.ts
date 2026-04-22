@@ -115,8 +115,6 @@ export async function POST(req: NextRequest) {
       const wsAccounts = freshAccounts.filter((a: any) => a.workspaceId === payload.workspaceId)
       if (wsAccounts.length >= 10) return NextResponse.json({ error: 'Max 10 accounts per workspace reached.' }, { status: 400 })
 
-      let newAccount: any
-
       if (platform !== 'tiktok') {
         return NextResponse.json({ error: 'Only TikTok is supported' }, { status: 400 })
       }
@@ -129,7 +127,7 @@ export async function POST(req: NextRequest) {
       const result = await fetchTikTokStats(payload.handle)
       if (!result.success) return NextResponse.json({ error: result.error }, { status: 422 })
       const stats = result.data!
-      newAccount = {
+      const newAccount = {
         id: `acc-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
         handle: stats.handle,
         workspaceId: payload.workspaceId,

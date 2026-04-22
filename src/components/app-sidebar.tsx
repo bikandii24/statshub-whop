@@ -85,7 +85,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   style={{ background: item.glowColor, boxShadow: `0 0 12px 3px ${item.glowColor}` }}
                 />
               )}
-              <item.icon className={`size-4.5 transition-all duration-300 ${isActive ? item.color : ""} ${isActive ? "scale-110" : ""}`} />
+              <item.icon className={`w-[18px] h-[18px] transition-all duration-300 ${isActive ? item.color : ""} ${isActive ? "scale-110" : ""}`} />
               <span className={`font-semibold text-sm tracking-tight ${isActive ? "font-bold" : ""}`}>
                 {item.title}
               </span>
@@ -300,7 +300,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               className="h-11 rounded-xl hover:bg-white/5 transition-all group border border-transparent"
               render={
                 <Link href="/settings" className="flex items-center gap-3 w-full">
-                  <Settings className="size-4.5 text-muted-foreground/50 group-hover:rotate-90 transition-transform duration-500" />
+                  <Settings className="w-[18px] h-[18px] text-muted-foreground/50 group-hover:rotate-90 transition-transform duration-500" />
                   <span className="font-semibold text-sm text-muted-foreground/60 group-hover:text-white transition-colors tracking-tight">
                     {t.nav_settings}
                   </span>

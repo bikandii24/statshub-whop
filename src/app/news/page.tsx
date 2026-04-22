@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import Image from "next/image"
 
 const CATEGORIES = ["All", "AI Tools", "Research", "Business", "Fitness"] as const
 type Category = typeof CATEGORIES[number]
@@ -157,7 +158,7 @@ export default function NoticiasPage() {
               <Card key={item.id} className="glass border-white/[0.07] overflow-hidden group hover:-translate-y-1 transition-all duration-300 flex flex-col">
                 {item.image && (
                   <div className="h-36 overflow-hidden relative">
-                    <img src={item.image} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" onError={e => { (e.target as HTMLImageElement).style.display = 'none' }} />
+                    <Image src={item.image} alt={item.title} fill unoptimized className="object-cover group-hover:scale-105 transition-transform duration-500" onError={() => {}} />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                     {item.hot && <div className="absolute top-2 left-2 flex items-center gap-1 px-2 py-0.5 rounded-full bg-orange-500/90 text-white text-[9px] font-black uppercase tracking-widest"><Flame className="size-3" /> Hot</div>}
                   </div>

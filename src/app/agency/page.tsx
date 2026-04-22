@@ -7,6 +7,7 @@ import { Building2, Download, Users, LineChart, Trash2, RefreshCcw, Loader2, Plu
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import Image from "next/image"
 
 function fmt(n: number) {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
@@ -172,7 +173,7 @@ export default function AgenciaPage() {
                 <CardContent className="p-5">
                   <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
                     <div className="flex items-center gap-4 flex-1">
-                      {client.avatar ? <img src={client.avatar} alt={client.handle} className="size-12 rounded-xl object-cover shrink-0" /> : <div className="size-12 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center font-black text-lg shrink-0">@</div>}
+                      {client.avatar ? <Image src={client.avatar} alt={client.handle} width={48} height={48} unoptimized className="size-12 rounded-xl object-cover shrink-0" /> : <div className="size-12 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center font-black text-lg shrink-0">@</div>}
                       <div>
                         <div className="flex items-center gap-1.5">
                           <h3 className="text-base font-black text-white">{client.handle}</h3>

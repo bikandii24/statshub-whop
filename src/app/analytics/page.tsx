@@ -18,6 +18,9 @@ import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+
+// Stable timestamp for fallback chart data (module-level to avoid impure render calls)
+const NOW = Date.now()
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
@@ -252,10 +255,10 @@ export default function AnaliticaPage() {
       const vl = totalViews || 5000
 
       const stepConfig = dateFilter === "7d"
-        ? { steps: 7, labelFn: (i: number) => format(new Date(Date.now() - (6-i)*86400000), 'dd MMM', { locale: enUS }), variation: 0.04 }
+        ? { steps: 7, labelFn: (i: number) => format(new Date(NOW - (6-i)*86400000), 'dd MMM', { locale: enUS }), variation: 0.04 }
         : dateFilter === "30d"
-        ? { steps: 5, labelFn: (i: number) => format(new Date(Date.now() - (4-i)*7*86400000), "'Wk' dd MMM", { locale: enUS }), variation: 0.08 }
-        : { steps: 6, labelFn: (i: number) => format(new Date(Date.now() - (5-i)*15*86400000), 'dd MMM', { locale: enUS }), variation: 0.15 }
+        ? { steps: 5, labelFn: (i: number) => format(new Date(NOW - (4-i)*7*86400000), "'Wk' dd MMM", { locale: enUS }), variation: 0.08 }
+        : { steps: 6, labelFn: (i: number) => format(new Date(NOW - (5-i)*15*86400000), 'dd MMM', { locale: enUS }), variation: 0.15 }
 
       return Array.from({ length: stepConfig.steps }, (_, i) => {
         const ratio = 0.8 + (i / (stepConfig.steps - 1)) * 0.2  // grows from 80% to 100%

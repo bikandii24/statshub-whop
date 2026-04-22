@@ -4,7 +4,8 @@ import * as React from "react"
 import { useParams, useRouter } from "next/navigation"
 import { useWorkspace } from "@/context/workspace-context"
 import type { SocialPlatform, RecentPost } from "@/context/workspace-context"
-import { ArrowLeft, Users, Heart, Zap, LineChart, BadgeCheck, Eye, MessageCircle, Share2, Download, Play, Video, Film, Image } from "lucide-react"
+import { ArrowLeft, Users, Heart, Zap, LineChart, BadgeCheck, Eye, MessageCircle, Share2, Download, Play, Film } from "lucide-react"
+import Image from "next/image"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Area, AreaChart, Bar, BarChart as RechartsBarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
 import { format } from "date-fns"
@@ -14,6 +15,9 @@ import { enUS } from "date-fns/locale"
 const PLATFORM_CONFIG: Record<SocialPlatform, { emoji: string; color: string; name: string }> = {
   tiktok:    { emoji: "🎵", color: "#EC4899", name: "TikTok" },
 }
+
+// Stable timestamp for fallback chart data (module-level to avoid impure render calls)
+const NOW = Date.now()
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const fmt = (n: number) =>
@@ -46,7 +50,8 @@ const METRIC_LABELS: Record<MetricKey, string> = {
   audiencia: "Total Audience", engagement: "Engagement", alcance: "Reach", vistas: "Views",
 }
 
-const CustomTooltip = ({ active, payload, label, isPercent }: any) => {
+type TooltipPayload = { value?: number }
+const CustomTooltip = ({ active, payload, label, isPercent }: { active?: boolean; payload?: TooltipPayload[]; label?: string; isPercent?: boolean }) => {
   if (!active || !payload?.length) return null
   const v = payload[0]?.value ?? 0
   const fmtV = isPercent ? `${v}%` : v > 1000 ? `${(v / 1000).toFixed(1)}K` : v.toString()
@@ -58,7 +63,8 @@ const CustomTooltip = ({ active, payload, label, isPercent }: any) => {
   )
 }
 
-function MetricChart({ metric, data }: { metric: MetricKey; data: any[] }) {
+type ChartRow = { name: string; audiencia?: number; engagement?: number; vistas?: number; alcance?: number }
+function MetricChart({ metric, data }: { metric: MetricKey; data: ChartRow[] }) {
   const cfg = METRIC_COLORS[metric]
   const isBar = metric === "engagement"
   const isPercent = metric === "engagement"
@@ -105,6 +111,7 @@ function MetricChart({ metric, data }: { metric: MetricKey; data: any[] }) {
 function PostCard({ post, platform, handle }: { post: RecentPost; platform: SocialPlatform; handle: string }) {
   const isShort   = post.type === "short"
   const isVertical = isShort || post.type === "reel"
+  const [imgError, setImgError] = React.useState(false)
 
   // Build URL fallback for TikTok
   const url = post.url ?? (
@@ -128,14 +135,16 @@ function PostCard({ post, platform, handle }: { post: RecentPost; platform: Soci
         className="relative w-full bg-black/40 overflow-hidden"
         style={{ height: isVertical ? '200px' : '140px' }}
       >
-        {post.thumbnail ? (
-          <img
+        {post.thumbnail && !imgError ? (
+          <Image
             src={post.thumbnail}
             alt=""
+            fill
+            unoptimized
             referrerPolicy="no-referrer"
             crossOrigin="anonymous"
-            className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
-            onError={e => { (e.target as HTMLImageElement).style.display = 'none' }}
+            className="object-cover opacity-80 group-hover:opacity-100 transition-opacity"
+            onError={() => setImgError(true)}
           />
         ) : null}
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
@@ -213,9 +222,49 @@ export default function CuentaPage() {
   const platform = (account?.platform ?? "tiktok") as SocialPlatform
   const platformCfg = PLATFORM_CONFIG[platform]
 
-  const [postFilter, setPostFilter] = React.useState<"all" | "short" | "video">("all")
   const [rpmRate, setRpmRate] = React.useState(0.5)
   const [sponsorRate, setSponsorRate] = React.useState(2.0)
+  const baseViews = account?.views || 0
+  const accountSnapshots = snapshots[account?.id ?? ''] || []
+
+  const chartData = React.useMemo(() => {
+    if (!account) return []
+    const followers = account.followers || 100
+    const engagement = account.engagement || 1
+    const views = baseViews || 0
+    const byDay: Record<string, { name: string; followers: number[]; engagements: number[]; views: number[] }> = {}
+    accountSnapshots.forEach((snap: { timestamp: string; followers?: number; engagement?: number; views?: number }) => {
+      const dayKey = format(new Date(snap.timestamp), 'dd MMM', { locale: enUS })
+      if (!byDay[dayKey]) byDay[dayKey] = { name: dayKey, followers: [], engagements: [], views: [] }
+      byDay[dayKey].followers.push(snap.followers || 0)
+      byDay[dayKey].engagements.push(snap.engagement || 0)
+      byDay[dayKey].views.push(snap.views || views || 0)
+    })
+    const grouped = Object.values(byDay).map(d => {
+      const avgF = Math.round(d.followers.reduce((a, b) => a + b, 0) / d.followers.length)
+      const avgE = +(d.engagements.reduce((a, b) => a + b, 0) / d.engagements.length).toFixed(1)
+      const avgV = Math.round(d.views.reduce((a, b) => a + b, 0) / d.views.length)
+      return { name: d.name, audiencia: avgF, engagement: avgE, vistas: avgV, alcance: Math.round(avgF * (avgE / 100) * 10) }
+    })
+    if (grouped.length >= 2) return grouped
+    const steps = 7
+    return Array.from({ length: steps }, (_, i) => {
+      const daysAgo = steps - 1 - i
+      const d = new Date(NOW - daysAgo * 86400000)
+      const ratio = 0.80 + (i / (steps - 1)) * 0.20
+      const noise = 1 + Math.sin(i * 2.3 + 1) * 0.04
+      const r = ratio * noise
+      const f = Math.round(followers * r)
+      const e = +(engagement * r).toFixed(1)
+      return { name: format(d, 'dd MMM', { locale: enUS }), audiencia: f, engagement: e, vistas: Math.round(views * r), alcance: Math.round(f * (e / 100) * 10) }
+    })
+  }, [account, accountSnapshots, baseViews])
+
+  const allPosts = account?.recentPosts ?? []
+  const visiblePosts = allPosts
+
+  const monthlyFondo  = (baseViews / 1000) * rpmRate
+  const sponsorPrice  = monthlyFondo * sponsorRate
 
   if (!account) {
     return (
@@ -225,48 +274,6 @@ export default function CuentaPage() {
       </div>
     )
   }
-
-  const baseViews = account.views || 0
-  const accountSnapshots = snapshots[account.id] || []
-
-  const chartData = React.useMemo(() => {
-    const followers = account.followers || 100
-    const engagement = account.engagement || 1
-    const views = baseViews || 0
-    const byDay: Record<string, any> = {}
-    accountSnapshots.forEach(snap => {
-      const dayKey = format(new Date(snap.timestamp), 'dd MMM', { locale: enUS })
-      if (!byDay[dayKey]) byDay[dayKey] = { name: dayKey, followers: [], engagements: [], views: [] }
-      byDay[dayKey].followers.push(snap.followers || 0)
-      byDay[dayKey].engagements.push(snap.engagement || 0)
-      byDay[dayKey].views.push(snap.views || views || 0)
-    })
-    const grouped = Object.values(byDay).map(d => {
-      const avgF = Math.round(d.followers.reduce((a: number, b: number) => a + b, 0) / d.followers.length)
-      const avgE = +(d.engagements.reduce((a: number, b: number) => a + b, 0) / d.engagements.length).toFixed(1)
-      const avgV = Math.round(d.views.reduce((a: number, b: number) => a + b, 0) / d.views.length)
-      return { name: d.name, audiencia: avgF, engagement: avgE, vistas: avgV, alcance: Math.round(avgF * (avgE / 100) * 10) }
-    })
-    if (grouped.length >= 2) return grouped
-    const steps = 7
-    return Array.from({ length: steps }, (_, i) => {
-      const daysAgo = steps - 1 - i
-      const d = new Date(Date.now() - daysAgo * 86400000)
-      const ratio = 0.80 + (i / (steps - 1)) * 0.20
-      const noise = 1 + Math.sin(i * 2.3 + 1) * 0.04
-      const r = ratio * noise
-      const f = Math.round(followers * r)
-      const e = +(engagement * r).toFixed(1)
-      return { name: format(d, 'dd MMM', { locale: enUS }), audiencia: f, engagement: e, vistas: Math.round(views * r), alcance: Math.round(f * (e / 100) * 10) }
-    })
-  }, [accountSnapshots, account.followers, account.engagement, baseViews])
-
-  // ── Post filtering ──
-  const allPosts = account.recentPosts ?? []
-  const visiblePosts = allPosts
-
-  const monthlyFondo  = (baseViews / 1000) * rpmRate
-  const sponsorPrice  = monthlyFondo * sponsorRate
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-6 duration-700 ease-out max-w-5xl mx-auto">
@@ -285,7 +292,7 @@ export default function CuentaPage() {
           style={{ background: `${platformCfg.color}20` }} />
 
         {account.avatar ? (
-          <img src={account.avatar} alt={account.handle} className="size-24 rounded-2xl object-cover shadow-xl" style={{ boxShadow: `0 20px 40px ${platformCfg.color}30` }} />
+          <Image src={account.avatar} alt={account.handle} width={96} height={96} unoptimized className="size-24 rounded-2xl object-cover shadow-xl" style={{ boxShadow: `0 20px 40px ${platformCfg.color}30` }} />
         ) : (
           <div className="size-24 rounded-2xl flex flex-col items-center justify-center text-4xl" style={{ background: `${platformCfg.color}20` }}>
             {platformCfg.emoji}

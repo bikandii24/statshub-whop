@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, Syne, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { WhopApp } from "@whop/react/components";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -35,8 +34,6 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const hasWhopAppId = !!process.env.NEXT_PUBLIC_WHOP_APP_ID;
-
   return (
     <html lang="en" suppressHydrationWarning>
       <body

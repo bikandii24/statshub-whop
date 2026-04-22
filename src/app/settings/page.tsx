@@ -135,7 +135,7 @@ export default function ConfiguracionPage() {
             <div className="flex-1">
               <p className="text-sm font-bold text-white mb-0.5">Analytics data sharing</p>
               <p className="text-xs text-muted-foreground/60 leading-snug">
-                Allow your accounts' aggregated stats to be used for anonymous market analysis.
+                Allow your accounts&apos; aggregated stats to be used for anonymous market analysis.
                 You can withdraw consent at any time.
               </p>
             </div>

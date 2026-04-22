@@ -3,10 +3,11 @@
 import { useT } from "@/i18n"
 import * as React from "react"
 import { useWorkspace } from "@/context/workspace-context"
-import type { SocialPlatform } from "@/context/workspace-context"
+import type { SocialPlatform, Account } from "@/context/workspace-context"
 import { useRouter } from "next/navigation"
+import Image from "next/image"
 import {
-  Card, CardContent, CardHeader, CardTitle, CardDescription,
+  Card, CardContent,
 } from "@/components/ui/card"
 import {
   Users, Heart, Video, Zap, RefreshCw, Trash2, Plus, X,
@@ -49,7 +50,7 @@ function PlatformBadge({ platform }: { platform: SocialPlatform }) {
 // ── Main Component ────────────────────────────────────────────────────────────
 export default function AccountsPage() {
   const t = useT()
-  const { accounts, activeWorkspace, addAccount, syncAccount, deleteAccount, isLoading, apiConfigured } = useWorkspace()
+  const { accounts, activeWorkspace, addAccount, syncAccount, deleteAccount, isLoading } = useWorkspace()
   const router = useRouter()
 
   // ── State ──
@@ -221,7 +222,6 @@ export default function AccountsPage() {
           {filteredAccounts.map(account => {
             const platform = (account.platform ?? "tiktok") as SocialPlatform
             const cfg = PLATFORM_CONFIG[platform]
-            const isTikTok = platform === "tiktok"
             return (
               <Card key={account.id}
                 onClick={() => router.push(`/account/${account.id}`)}
@@ -234,8 +234,8 @@ export default function AccountsPage() {
                   {/* Top row */}
                   <div className="flex items-start gap-3 mb-4">
                     {account.avatar ? (
-                      <img src={account.avatar} alt={account.handle}
-                        className="size-12 rounded-xl object-cover shadow-lg" />
+                      <Image src={account.avatar} alt={account.handle} width={48} height={48}
+                        unoptimized className="size-12 rounded-xl object-cover shadow-lg" />
                     ) : (
                       <div className={`size-12 rounded-xl ${cfg.bg} flex items-center justify-center shrink-0`}>
                         <span className="text-xl">{cfg.emoji}</span>
@@ -403,7 +403,7 @@ export default function AccountsPage() {
 }
 
 // ── AI Copilot (TikTok only) ──────────────────────────────────────────────────
-function AICopilot({ accounts, t }: { accounts: any[]; t: any }) {
+function AICopilot({ accounts, t }: { accounts: Account[]; t: ReturnType<typeof useT> }) {
   const [selectedAccount, setSelectedAccount] = React.useState("")
   const [niche, setNiche] = React.useState("")
   const [loading, setLoading] = React.useState(false)

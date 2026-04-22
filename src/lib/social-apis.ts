@@ -216,7 +216,7 @@ export async function fetchYouTubeStats(handle: string): Promise<FetchResult> {
       // forHandle requires '@' prefix and is unreliable — try forUsername first
       channelParams.forUsername = clean
     }
-    let channelJson = await rapidFetch(host, '/channels', channelParams)
+    const channelJson = await rapidFetch(host, '/channels', channelParams)
     let channel = channelJson?.items?.[0]
 
     // If forUsername returned nothing, try forHandle
@@ -272,7 +272,7 @@ export async function fetchYouTubeStats(handle: string): Promise<FetchResult> {
           .join(',')
 
         // 3. Fetch video details (duration for Shorts detection + stats)
-        let videoDetails: Record<string, any> = {}
+        const videoDetails: Record<string, { contentDetails?: { duration?: string }; statistics?: { viewCount?: string; likeCount?: string; commentCount?: string } }> = {}
         if (videoIds) {
           try {
             const videosJson = await rapidFetch(host, '/videos', {

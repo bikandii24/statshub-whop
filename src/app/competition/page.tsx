@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import Image from "next/image"
 import { useWorkspace } from "@/context/workspace-context"
 
 function fmt(n: number) {
@@ -150,7 +151,7 @@ export default function CompetenciaPage() {
             <span className="text-sm font-black text-white">Add competitor manually</span>
             {manualCount > 0 && <Badge variant="outline" className="glass-sm border-emerald-500/30 text-emerald-400 text-[9px] font-black ml-1">{manualCount} saved</Badge>}
           </div>
-          <p className="text-xs text-muted-foreground/60 font-medium mb-3">Enter the TikTok @handle of a rival. We'll try to fetch their real data automatically.</p>
+          <p className="text-xs text-muted-foreground/60 font-medium mb-3">Enter the TikTok @handle of a rival. We&apos;ll try to fetch their real data automatically.</p>
           <div className="flex flex-col sm:flex-row gap-2">
             <div className="relative flex-1">
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/40 text-sm font-bold">@</span>
@@ -223,7 +224,7 @@ export default function CompetenciaPage() {
                     <div className={`size-8 rounded-lg flex items-center justify-center font-black text-sm shrink-0 ${c.isManual ? "bg-emerald-500/10 border border-emerald-500/20 text-emerald-400" : "bg-violet-500/10 border border-violet-500/20 text-violet-400"}`}>
                       {c.isManual ? <BookmarkPlus className="size-4" /> : `#${i + 1}`}
                     </div>
-                    {c.avatar ? <img src={c.avatar} alt={c.handle} className="size-11 rounded-xl object-cover border border-white/10 shrink-0" /> : <div className="size-11 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center font-black shrink-0">{c.name[0]?.toUpperCase()}</div>}
+                    {c.avatar ? <Image src={c.avatar} alt={c.handle} width={44} height={44} unoptimized className="size-11 rounded-xl object-cover border border-white/10 shrink-0" /> : <div className="size-11 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center font-black shrink-0">{c.name[0]?.toUpperCase()}</div>}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <span className="font-black text-white text-sm truncate" style={{ fontFamily: "var(--font-syne)" }}>{c.name}</span>
@@ -258,7 +259,7 @@ export default function CompetenciaPage() {
                         {c.topVideos.map((v, vi) => (
                           <div key={v.id} className="flex items-center gap-2 p-2 rounded-xl bg-white/[0.025] border border-white/[0.04]">
                             <div className="relative size-10 rounded-lg overflow-hidden shrink-0 bg-black/40">
-                              {v.thumbnail ? <img src={v.thumbnail} alt="" referrerPolicy="no-referrer" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} /> : null}
+                              {v.thumbnail ? <Image src={v.thumbnail} alt="" fill unoptimized referrerPolicy="no-referrer" className="object-cover" onError={() => {}} /> : null}
                               <div className="absolute inset-0 flex items-center justify-center"><span className="text-[9px] font-black text-white/50">#{vi + 1}</span></div>
                             </div>
                             <div className="flex-1 min-w-0">
@@ -341,7 +342,7 @@ export default function CompetenciaPage() {
               <button onClick={() => setSelectedCompetitor(null)} className="size-8 rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors"><X className="size-4 text-white/60" /></button>
             </div>
             <div className="flex items-center gap-4">
-              {comp.avatar ? <img src={comp.avatar} alt="" referrerPolicy="no-referrer" className="size-16 rounded-2xl object-cover border border-white/10" /> : <div className="size-16 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-2xl font-black">{comp.name[0]?.toUpperCase()}</div>}
+              {comp.avatar ? <Image src={comp.avatar} alt="" width={64} height={64} unoptimized referrerPolicy="no-referrer" className="size-16 rounded-2xl object-cover border border-white/10" /> : <div className="size-16 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-2xl font-black">{comp.name[0]?.toUpperCase()}</div>}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <h2 className="text-xl font-black text-white truncate" style={{ fontFamily: 'var(--font-syne)' }}>{comp.name}</h2>
@@ -387,7 +388,7 @@ export default function CompetenciaPage() {
                   return (
                     <a key={v.id} href={videoUrl ?? undefined} target="_blank" rel="noopener noreferrer" className={`flex gap-3 p-3 rounded-2xl glass border border-white/[0.06] hover:border-white/[0.12] transition-colors group ${videoUrl ? 'cursor-pointer' : 'cursor-default'}`} onClick={e => !videoUrl && e.preventDefault()}>
                       <div className="relative w-16 h-20 rounded-xl overflow-hidden shrink-0 bg-black/40">
-                        {v.thumbnail ? <img src={v.thumbnail} alt="" referrerPolicy="no-referrer" className="w-full h-full object-cover group-hover:scale-105 transition-transform" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} /> : null}
+                        {v.thumbnail ? <Image src={v.thumbnail} alt="" fill unoptimized referrerPolicy="no-referrer" className="object-cover group-hover:scale-105 transition-transform" onError={() => {}} /> : null}
                         <div className="absolute inset-0 flex items-end justify-start p-1"><span className="text-[9px] font-black bg-black/70 text-white/80 rounded-md px-1.5 py-0.5">#{vi + 1}</span></div>
                         {videoUrl && <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40"><span className="text-[9px] font-black text-white">View ↗</span></div>}
                       </div>
