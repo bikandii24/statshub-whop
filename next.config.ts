@@ -54,10 +54,9 @@ const nextConfig: NextConfig = {
             value: "camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()",
           },
 
-          // ── Clickjacking (belt + suspenders with CSP frame-ancestors) ────
-          // NOTE: Whop needs iframe embedding, so we can't use DENY globally.
-          // CSP frame-ancestors already covers it, but we add SAMEORIGIN as fallback.
-          { key: "X-Frame-Options", value: "SAMEORIGIN" },
+          // ── Clickjacking ─────────────────────────────────────────────────
+          // NOTE: Whop embeds this app in an iframe, so X-Frame-Options is omitted.
+          // CSP frame-ancestors already restricts embedding to Whop domains only.
 
           // ── XSS filter (legacy browsers) ────────────────────────────────
           { key: "X-XSS-Protection", value: "1; mode=block" },
